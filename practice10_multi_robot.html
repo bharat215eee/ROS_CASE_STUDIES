@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 10 – ROS Security & Hardening for Robotics Labs</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .content { padding: 28px 32px; display: none; }
+    .content.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .eq-box .comment { color: #6a737d; }
+    .eq-box .highlight { color: var(--accent); font-weight: bold; }
+    .eq-box .highlight2 { color: var(--accent2); font-weight: bold; }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .info-chip span { color: var(--text); font-weight: 600; }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .lang-sh {
+      background: #3572a522;
+      color: #4d9fdb;
+      border: 1px solid #3572a544;
+    }
+    .lang-yaml {
+      background: #4fc38b22;
+      color: #4fc38b;
+      border: 1px solid #4fc38b55;
+    }
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 10</span>
+        <h1>ROS Security & Hardening for Robotics Labs</h1>
+      </div>
+      <p>ROS 1 (Noetic) • Network Isolation • SROS • Access Control • Monitoring</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('theory')">Security Basics</div>
+    <div class="tab" onclick="switchTab('experiments')">Lab Exercises</div>
+    <div class="tab" onclick="switchTab('code')">Configs & Scripts</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Projects</div>
+  </div>
+
+  <!-- THEORY TAB -->
+  <div id="tab-theory" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>ROS 1 Security Challenges</h3>
+        <div class="eq-box">
+<span class="comment">// Why security is non-trivial in ROS 1</span>
+
+ROS 1 was designed for open, trusted lab networks:
+  - No built-in authentication between nodes.
+  - No native encryption on XMLRPC/TCPros.
+  - Topics/services/params visible to anyone on ROS_MASTER_URI.
+
+Threats in shared networks:
+  - Spoofed publishers injecting fake /cmd_vel.
+  - Eavesdropping on camera/LiDAR topics.
+  - Parameter tampering (e.g., gains, safety limits).
+
+Mitigation strategy:
+  - Start with **network isolation & firewalls**.
+  - Add **SROS / TLS**, **access control**, and **host hardening** where feasible.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Issues:</span> no auth, no crypto</div>
+          <div class="info-chip"><span>Risks:</span> spoofing, tampering</div>
+          <div class="info-chip"><span>First step:</span> network design</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Defence-in-Depth for ROS Labs</h3>
+        <div class="eq-box">
+<span class="comment">// From ROS Security and ROS-Industrial guidance</span>
+
+Layered controls:
+  1) <span class="highlight">Network isolation</span>:
+     - Dedicated lab VLAN or air‑gapped network for robots.
+     - No direct exposure of ROS_MASTER_URI to campus/Internet.
+
+  2) <span class="highlight">Host hardening</span>:
+     - Disable unnecessary services/ports.
+     - Use firewall (ufw/iptables), keep OS & ROS updated.
+
+  3) <span class="highlight">ROS-level security</span>:
+     - SROS for TLS + access control where possible.
+     - Namespaced access rules for nodes.
+
+  4) <span class="highlight">Monitoring & logging</span>:
+     - ROS diagnostics, logs, and network monitoring for anomalies.
+
+This practice focuses on low-friction controls suitable for teaching labs.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Layers:</span> network, host, ROS, monitoring</div>
+          <div class="info-chip"><span>Goal:</span> realistic but teachable</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive Risk Slider</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual security posture estimator</span>
+
+Adjust:
+ - Network exposure (0 = isolated, 10 = on open Wi‑Fi)
+ - Hardening level (0 = none, 10 = well locked‑down)
+to see a qualitative “risk level” bar for a ROS lab setup.
+        </div>
+
+        <label>Network exposure (0–10)
+          <span class="val-display" id="exp-val">7</span>
+        </label>
+        <input type="range" id="exp-slider" min="0" max="10" step="1" value="7" oninput="updateRisk()" />
+
+        <label>Hardening level (0–10)
+          <span class="val-display" id="hard-val">3</span>
+        </label>
+        <input type="range" id="hard-slider" min="0" max="10" step="1" value="3" oninput="updateRisk()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="riskCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="risk-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4f8ef7;"></span>SROS Overview (ROS 1)</h3>
+        <div class="eq-box">
+<span class="comment">// SROS: hardening ROS over the wire, in the graph, in the kernel</span>
+
+SROS features:
+  - TLS for all ROS socket transports.
+  - x.509 certificates & chains of trust for nodes.
+  - Namespaced access control (which node may access which topics/services).
+  - AppArmor profiles for ROS processes.
+
+Key ideas for students:
+  - Nodes authenticate via certificates, not just IP/port.
+  - Access policies restrict graph interactions (e.g., only navigation stack
+    may publish /cmd_vel, not arbitrary nodes).
+
+Full deployment is advanced, but you can show small demos with simple
+policies to illustrate authenticated and unauthorized nodes.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Network Isolation & Firewall Basics</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Set up a safer ROS lab network and basic firewall rules.
+
+<span class="comment">// Steps</span>
+1. Place ROS master and robots on a dedicated lab subnet or VLAN.
+2. Confirm that only trusted lab PCs are connected to this subnet.
+3. On ROS PCs, enable ufw and allow only:
+   - SSH from admin IPs
+   - Necessary ROS ports inside lab subnet.
+4. Attempt to access ROS master from an external network and verify that
+   connections are blocked.
+
+<span class="comment">// Discussion</span>
+Relate this to basic ICS/SCADA segmentation: control networks separated
+from corporate/Internet networks.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Spoofed Publisher Demonstration (Controlled)</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Demonstrate how an unauthorized node can inject /cmd_vel on an open ROS 1 network.
+
+<span class="comment">// Steps</span>
+1. In a safe demo setup (no real robot, only Gazebo/TurtleSim):
+   - Run navigation stack or teleop publishing /cmd_vel.
+2. On another machine in same ROS network, run:
+   rostopic pub /cmd_vel geometry_msgs/Twist ...
+3. Observe robot suddenly follow spoofed commands.
+4. Now move attacker machine to an isolated VLAN or block it via firewall
+   and repeat; spoofing should fail.
+
+<span class="comment">// Discussion</span>
+Connect to concept of “untrusted participants” on shared networks and need
+for both segmentation and authentication.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Logging & Anomaly Monitoring</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Use ROS tools to monitor unusual activity on topics & CPU/network usage.
+
+<span class="comment">// Steps</span>
+1. Use:
+   rqt_graph, rqt_top, rqt_logger_level, rostopic hz, rostopic bw
+   to observe normal behavior under teleop/navigation.
+2. Introduce a “noisy node” that publishes /cmd_vel at very high rates.
+3. Observe:
+   - CPU/network load in rqt_top or OS tools.
+   - Increased /cmd_vel frequency in rostopic hz.
+4. Log with rosbag and inspect message patterns.
+
+<span class="comment">// Analysis</span>
+Relate anomaly detection here to network intrusion detection and to
+performance monitoring in industrial robots.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>Ubuntu Firewall (ufw) Example Rules</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Host Firewall</span>
+            <span class="lang-badge lang-sh">Shell</span>
+          </div>
+          <pre>
+<span class="cmt"># Basic ufw setup for a ROS lab PC</span>
+sudo apt install ufw
+
+<span class="cmt"># Default deny incoming, allow outgoing</span>
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+<span class="cmt"># Allow SSH only from admin workstation</span>
+sudo ufw allow from 192.168.10.100 to any port 22 proto tcp
+
+<span class="cmt"># Allow ROS master XMLRPC port from lab subnet</span>
+sudo ufw allow from 192.168.10.0/24 to any port 11311 proto tcp
+
+<span class="cmt"># Enable firewall</span>
+sudo ufw enable
+
+<span class="cmt"># Check status</span>
+sudo ufw status verbose
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>Minimal SROS Concept (Policy Snippet)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>SROS Policy Idea</span>
+            <span class="lang-badge lang-yaml">YAML-like</span>
+          </div>
+          <pre>
+<span class="cmt"># Conceptual snippet – not full SROS config</span>
+policies:
+  navigation_node:
+    cert: nav_node.pem
+    allow:
+      topics:
+        publish:   ["/cmd_vel", "/move_base/goal"]
+        subscribe: ["/scan", "/odom", "/amcl_pose"]
+      services:
+        call:      ["/move_base/make_plan"]
+  student_teleop:
+    cert: teleop.pem
+    allow:
+      topics:
+        publish:   ["/cmd_vel"]
+        subscribe: ["/scan", "/tf"]
+
+<span class="cmt"># Idea: only nodes with valid certificates and permissions
+# may publish /cmd_vel or call critical services.</span>
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Network Layout Example (Text)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Topology Sketch</span>
+            <span class="lang-badge lang-sh">Text</span>
+          </div>
+          <pre>
+Recommended lab topology (conceptual):
+
+[Campus / Internet]
+       |
+   [Firewall]
+       |
+  [Router / L3 switch]
+       |
++--------------------------+
+|   Robotics VLAN (10.x)   |
+|                          |
+|  [ROS Master PC]         |
+|  [Student PC 1]          |
+|  [Student PC 2]          |
+|  [Robots / Sensors]      |
++--------------------------+
+
+Key points:
+  - No direct inbound from campus/Internet to Robotics VLAN.
+  - Remote access via VPN or jump host with strong auth.
+  - ROS_MASTER_URI not exposed outside VLAN.
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>CLI Summary – Security Checks</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS + OS Tools</span>
+            <span class="lang-badge lang-sh">Shell</span>
+          </div>
+          <pre>
+<span class="cmt"># View ROS graph participants</span>
+rqt_graph
+
+<span class="cmt"># Check which nodes publish/subscribe a topic</span>
+rostopic info /cmd_vel
+
+<span class="cmt"># Monitor message rates/bandwidth</span>
+rostopic hz /cmd_vel
+rostopic bw /camera/image_raw
+
+<span class="cmt"># Check open ports and connections</span>
+ss -tulpn | grep ros
+sudo lsof -i -P | grep 11311
+
+<span class="cmt"># Check firewall status</span>
+sudo ufw status verbose
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) Why is a default ROS 1 installation not safe to expose on an open or hostile network?
+2) Explain the principle of defence‑in‑depth and how it applies to a ROS lab setup.
+3) How can network segmentation and firewalls reduce the attack surface of ROS‑Industrial deployments?
+4) What problems does SROS aim to solve in ROS 1, and by which mechanisms (e.g., TLS, access control, AppArmor)?
+5) How would you detect an unauthorized node that is publishing on a critical topic like /cmd_vel?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Design a security checklist for your lab’s TurtleBot3/Gazebo experiments (network, host, ROS, monitoring) and apply it to one full practice.
+
+2) Read the SROS paper and prototype a tiny SROS demo: one allowed and one blocked node trying to publish /cmd_vel.
+
+3) Combine ROS network monitoring with simple anomaly detection (e.g., Python node that flags abnormal /cmd_vel rates or magnitudes).
+
+4) Map ISA/IEC‑62443 or NIST CSF concepts (zones, conduits, risk assessment) to ROS‑Industrial cells using real or simulated robots.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updateRisk() {
+      const exp = parseFloat(document.getElementById('exp-slider').value);
+      const hard = parseFloat(document.getElementById('hard-slider').value);
+      document.getElementById('exp-val').textContent = exp.toFixed(0);
+      document.getElementById('hard-val').textContent = hard.toFixed(0);
+
+      const rawRisk = exp * (1.1 - hard / 10.0);  // more hardening lowers risk
+      const risk = Math.max(0, Math.min(10, rawRisk));
+      drawRiskBar('riskCanvas', risk, exp, hard);
+
+      let level = 'Low';
+      if (risk > 3 && risk <= 7) level = 'Medium';
+      else if (risk > 7) level = 'High';
+
+      const infoDiv = document.getElementById('risk-info');
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>Exposure:</span> ' + exp.toFixed(0) + '</div>' +
+        '<div class="info-chip"><span>Hardening:</span> ' + hard.toFixed(0) + '</div>' +
+        '<div class="info-chip"><span>Risk level:</span> ' + level + '</div>';
+    }
+
+    function drawRiskBar(canvasId, risk, exp, hard) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 20, t: 20, b: 30 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      const maxRisk = 10.0;
+      const norm = Math.min(1.0, risk / maxRisk);
+      const barWidth = pw * norm;
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+      const grad = ctx.createLinearGradient(pad.l, pad.t, pad.l + pw, pad.t);
+      grad.addColorStop(0, '#4fcc7a');
+      grad.addColorStop(0.6, '#f7d14f');
+      grad.addColorStop(1, '#f74f4f');
+      ctx.fillStyle = grad;
+      ctx.fillRect(pad.l, pad.t, barWidth, ph);
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Qualitative security risk (lower is better)', pad.l, pad.t + ph + 18);
+      ctx.fillText('risk=' + risk.toFixed(1), pad.l + 4, pad.t + ph / 2 + 4);
+    }
+
+    window.addEventListener('load', () => {
+      updateRisk();
+    });
+  </script>
+</body>
+</html>

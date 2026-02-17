@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 5 – Gazebo Simulation of a Differential Drive Robot</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .content { padding: 28px 32px; display: none; }
+    .content.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .eq-box .comment { color: #6a737d; }
+    .eq-box .highlight { color: var(--accent); font-weight: bold; }
+    .eq-box .highlight2 { color: var(--accent2); font-weight: bold; }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .info-chip span { color: var(--text); font-weight: 600; }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .lang-xml {
+      background: #e44c1c22;
+      color: #e44c1c;
+      border: 1px solid #e44c1c44;
+    }
+    .lang-yaml {
+      background: #3572a522;
+      color: #4d9fdb;
+      border: 1px solid #3572a544;
+    }
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 5</span>
+        <h1>Gazebo Simulation of a Differential Drive Robot</h1>
+      </div>
+      <p>ROS Noetic • Gazebo • Plugins • diff_drive • Teleoperation</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('theory')">Gazebo & diff_drive</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">URDF & Controllers</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- THEORY TAB -->
+  <div id="tab-theory" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Gazebo–ROS Integration</h3>
+        <div class="eq-box">
+<span class="comment">// Gazebo: physics-based 3D simulator</span>
+
+ROS & Gazebo integration uses plugins:
+  - <span class="highlight">gazebo_ros_diff_drive</span> (differential-drive base)
+  - <span class="highlight">gazebo_ros_control</span> (ros_control interface)
+  - Sensor plugins (LIDAR, camera, IMU, etc.)
+
+Typical flow:
+  /cmd_vel  --(Twist)--&gt;  diff_drive plugin  --&gt; wheel joints
+  wheel motion --&gt; robot pose  --&gt; /odom, TF
+
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Simulator:</span> Gazebo</div>
+          <div class="info-chip"><span>Base:</span> Differential drive</div>
+          <div class="info-chip"><span>Plugin:</span> gazebo_ros_diff_drive</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>diff_drive Plugin Parameters</h3>
+        <div class="eq-box">
+<span class="comment">// Key parameters (from diff_drive plugin)</span>
+
+  &lt;plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so"&gt;
+    &lt;rosDebugLevel&gt;Debug&lt;/rosDebugLevel&gt;
+    &lt;left_wheel&gt;left_wheel_joint&lt;/left_wheel&gt;
+    &lt;right_wheel&gt;right_wheel_joint&lt;/right_wheel&gt;
+    &lt;wheelSeparation&gt;0.30&lt;/wheelSeparation&gt;
+    &lt;wheelDiameter&gt;0.10&lt;/wheelDiameter&gt;
+    &lt;commandTopic&gt;/cmd_vel&lt;/commandTopic&gt;
+    &lt;odometryTopic&gt;/odom&lt;/odometryTopic&gt;
+    &lt;publishTF&gt;true&lt;/publishTF&gt;
+    &lt;maxWheelTorque&gt;20&lt;/maxWheelTorque&gt;
+    &lt;maxWheelAcceleration&gt;2.0&lt;/maxWheelAcceleration&gt;
+  &lt;/plugin&gt;
+
+These parameters tie back to:
+  - Geometric model (wheelSeparation, wheelDiameter)
+  - Actuation limits (torque, acceleration)
+  - Interface topics (/cmd_vel, /odom).
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Input:</span> /cmd_vel</div>
+          <div class="info-chip"><span>Output:</span> /odom, TF</div>
+          <div class="info-chip"><span>Limits:</span> torque, accel</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive Command vs Slippage Sketch</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual visualization of high /cmd_vel with limited torque</span>
+
+Increase:
+ - Linear velocity command
+ - Load factor
+to see a qualitative “slip risk” bar, illustrating that aggressive commands
+under limited torque/acceleration can cause unrealistic behavior or wheel
+slip in simulation.
+        </div>
+
+        <label>Linear command v (m/s)
+          <span class="val-display" id="v-val">0.5</span>
+        </label>
+        <input type="range" id="v-slider" min="0.0" max="2.0" step="0.1" value="0.5" oninput="updateSlip()" />
+
+        <label>Load factor (arb.)
+          <span class="val-display" id="load-val">1.0</span>
+        </label>
+        <input type="range" id="load-slider" min="0.5" max="3.0" step="0.1" value="1.0" oninput="updateSlip()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="slipCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="slip-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>Gazebo Workflow Summary</h3>
+        <div class="eq-box">
+<span class="comment">// High-level workflow (Noetic)</span>
+
+1. Use URDF/Xacro from Practice 4 and embed Gazebo plugins and transmissions.
+2. Launch Gazebo with:
+   - world file
+   - robot spawned from robot_description.
+3. Drive robot via:
+   - teleop_twist_keyboard (publishing /cmd_vel)
+   - your own controllers or navigation stack.
+4. Inspect:
+   - /odom, TF tree, sensor topics in RViz and rqt_graph.
+
+This extends your purely geometric URDF model into a physically simulated robot.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Spawn Robot in Gazebo</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Spawn the differential drive robot into a Gazebo world and verify topics.
+
+<span class="comment">// Steps</span>
+1. Load URDF/Xacro into /robot_description.
+2. Start Gazebo with an empty world.
+3. Use gazebo_ros spawn_model:
+   rosrun gazebo_ros spawn_model \
+     -urdf -param robot_description -model dd_robot
+4. Check:
+   rostopic list
+   rostopic echo /odom (briefly)
+   rqt_graph (to view plugin connections).
+
+<span class="comment">// Observation</span>
+Confirm that /cmd_vel and /odom topics exist and TF frames are published.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Teleoperation & Trajectories</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Teleoperate the robot and relate motion to command profiles.
+
+<span class="comment">// Steps</span>
+1. Run:
+   rosrun teleop_twist_keyboard teleop_twist_keyboard.py \
+     cmd_vel:=/cmd_vel
+2. Drive straight, rotate, and follow approximate circles.
+3. Record /odom (rosbag) while driving.
+4. Plot x(t), y(t), θ(t) in Python and compare with ideal unicycle model
+   from Case Study 1.
+
+<span class="comment">// Discussion</span>
+Discuss differences between ideal kinematics and simulated motion including
+acceleration limits and friction.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Effect of Torque & Acceleration Limits</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Study how changing diff_drive plugin limits affects motion.
+
+<span class="comment">// Steps</span>
+1. Modify:
+   &lt;maxWheelTorque&gt; and &lt;maxWheelAcceleration&gt; in the plugin config.
+2. Re-launch Gazebo and run a step in /cmd_vel (e.g., 0 → 1 m/s).
+3. Observe acceleration and stopping distance from /odom.
+4. Compare low vs high torque/accel settings.
+
+<span class="comment">// Analysis</span>
+Relate this to saturation and rate limits in your control-system models.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>dd_robot_gazebo.urdf.xacro – Plugin Snippet</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>URDF + Gazebo</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- Inside your dd_robot.xacro / URDF --&gt;
+
+&lt;gazebo&gt;
+  &lt;plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so"&gt;
+    &lt;rosDebugLevel&gt;Info&lt;/rosDebugLevel&gt;
+
+    &lt;left_wheel&gt;left_wheel_joint&lt;/left_wheel&gt;
+    &lt;right_wheel&gt;right_wheel_joint&lt;/right_wheel&gt;
+
+    &lt;wheelSeparation&gt;0.30&lt;/wheelSeparation&gt;
+    &lt;wheelDiameter&gt;0.10&lt;/wheelDiameter&gt;
+
+    &lt;commandTopic&gt;/cmd_vel&lt;/commandTopic&gt;
+    &lt;odometryTopic&gt;/odom&lt;/odometryTopic&gt;
+    &lt;publishTF&gt;true&lt;/publishTF&gt;
+
+    &lt;maxWheelTorque&gt;20&lt;/maxWheelTorque&gt;
+    &lt;maxWheelAcceleration&gt;2.0&lt;/maxWheelAcceleration&gt;
+  &lt;/plugin&gt;
+&lt;/gazebo&gt;
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>Gazebo World & Launch</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>World + Launch</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- dd_world.world: simple empty world --&gt;
+&lt;sdf version="1.6"&gt;
+  &lt;world name="dd_world"&gt;
+    &lt;include&gt;
+      &lt;uri&gt;model://ground_plane&lt;/uri&gt;
+    &lt;/include&gt;
+    &lt;include&gt;
+      &lt;uri&gt;model://sun&lt;/uri&gt;
+    &lt;/include&gt;
+  &lt;/world&gt;
+&lt;/sdf&gt;
+
+&lt;!-- launch_dd_robot_gazebo.launch --&gt;
+&lt;launch&gt;
+  &lt;arg name="world_file" default="$(find your_pkg)/worlds/dd_world.world"/&gt;
+
+  &lt;param name="robot_description"
+         command="$(find xacro)/xacro '$(find your_pkg)/urdf/dd_robot_gazebo.xacro'" /&gt;
+
+  &lt;node pkg="gazebo_ros" type="gazebo"
+        name="gazebo" args="-u $(arg world_file)" output="screen" /&gt;
+
+  &lt;node pkg="gazebo_ros" type="spawn_model" name="spawn_dd_robot" output="screen"
+        args="-urdf -model dd_robot -param robot_description -x 0 -y 0 -z 0.05" /&gt;
+
+  &lt;node pkg="robot_state_publisher"
+        type="robot_state_publisher" name="robot_state_publisher"/&gt;
+&lt;/launch&gt;
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>diff_drive Controller YAML (ros_control)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>YAML</span>
+            <span class="lang-badge lang-yaml">YAML</span>
+          </div>
+          <pre>
+# diff_drive_controller.yaml
+dd_robot:
+  wheel_separation: 0.30
+  wheel_radius: 0.05
+  cmd_vel_timeout: 0.25
+  enable_odom_tf: true
+
+  diff_drive_controller:
+    type: "diff_drive_controller/DiffDriveController"
+    left_wheel:  ["left_wheel_joint"]
+    right_wheel: ["right_wheel_joint"]
+    publish_rate: 50
+    pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.0, 0.0, 0.01]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.0, 0.0, 0.01]
+
+# Load with:
+# rosparam load diff_drive_controller.yaml
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>CLI Summary – Gazebo</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic CLI</span>
+            <span class="lang-badge lang-xml">Shell</span>
+          </div>
+          <pre>
+<span class="cmt"># Launch Gazebo with robot</span>
+roslaunch your_pkg launch_dd_robot_gazebo.launch
+
+<span class="cmt"># Teleop</span>
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py cmd_vel:=/cmd_vel
+
+<span class="cmt"># Inspect topics and TF</span>
+rostopic list
+rostopic echo /odom
+rosrun rqt_tf_tree rqt_tf_tree
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) What role does the gazebo_ros_diff_drive plugin play in the simulation?
+2) How do wheelSeparation and wheelDiameter in the plugin relate to your URDF and kinematic model?
+3) Why is /odom important and how is it generated in this setup?
+4) How do torque and acceleration limits influence the robot’s responsiveness?
+5) Compare driving the robot in TurtleSim vs Gazebo – what extra phenomena appear in Gazebo?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Add a simple LIDAR plugin and observe /scan while driving around obstacles, as preparation for LIDAR and mapping labs.
+
+2) Design a velocity profile (trapezoidal) for /cmd_vel and compare stopping distances for different torque/accel limits.
+
+3) Integrate a diff_drive_controller via ros_control instead of the legacy diff_drive plugin and compare behaviors.
+
+4) Record a Gazebo run with rosbag and replay it while visualizing the path in RViz, analogous to step-response replay in control labs.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updateSlip() {
+      const v = parseFloat(document.getElementById('v-slider').value);
+      const load = parseFloat(document.getElementById('load-slider').value);
+      document.getElementById('v-val').textContent = v.toFixed(1);
+      document.getElementById('load-val').textContent = load.toFixed(1);
+
+      const risk = v * load;
+      drawSlipBar('slipCanvas', risk, v, load);
+
+      const infoDiv = document.getElementById('slip-info');
+      let level = 'Low';
+      if (risk > 2.5 && risk <= 4.5) level = 'Medium';
+      else if (risk > 4.5) level = 'High';
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>v:</span> ' + v.toFixed(1) + ' m/s</div>' +
+        '<div class="info-chip"><span>Load:</span> ' + load.toFixed(1) + '</div>' +
+        '<div class="info-chip"><span>Slip risk:</span> ' + level + '</div>';
+    }
+
+    function drawSlipBar(canvasId, risk, v, load) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 20, t: 20, b: 30 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      const maxRisk = 6.0;
+      const norm = Math.min(1.0, risk / maxRisk);
+      const barWidth = pw * norm;
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+      const grad = ctx.createLinearGradient(pad.l, pad.t, pad.l + pw, pad.t);
+      grad.addColorStop(0, '#4fcc7a');
+      grad.addColorStop(0.6, '#f7d14f');
+      grad.addColorStop(1, '#f74f4f');
+      ctx.fillStyle = grad;
+      ctx.fillRect(pad.l, pad.t, barWidth, ph);
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Qualitative slip/effort risk (arb. units)', pad.l, pad.t + ph + 18);
+      ctx.fillText('v=' + v.toFixed(1) + ', load=' + load.toFixed(1), pad.l + 4, pad.t + ph / 2 + 4);
+    }
+
+    window.addEventListener('load', () => {
+      updateSlip();
+    });
+  </script>
+</body>
+</html>

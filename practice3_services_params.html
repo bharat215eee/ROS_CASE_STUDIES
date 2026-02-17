@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 3 – ROS Services & Parameter Server</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .content { padding: 28px 32px; display: none; }
+    .content.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .eq-box .comment { color: #6a737d; }
+    .eq-box .highlight { color: var(--accent); font-weight: bold; }
+    .eq-box .highlight2 { color: var(--accent2); font-weight: bold; }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .info-chip span { color: var(--text); font-weight: 600; }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .lang-python {
+      background: #3572a522;
+      color: #4d9fdb;
+      border: 1px solid #3572a544;
+    }
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 3</span>
+        <h1>ROS Services & Parameter Server (TurtleSim)</h1>
+      </div>
+      <p>ROS Noetic • Request–Response • Configuration • Turtle Management</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('theory')">Services & Params</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">Python Code</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- THEORY TAB -->
+  <div id="tab-theory" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Service Abstraction</h3>
+        <div class="eq-box">
+<span class="comment">// ROS Service = request–response interaction</span>
+
+<span class="highlight">Topic</span>   : continuous, streaming data (publish/subscribe)
+<span class="highlight">Service</span> : one-time RPC-style call (client/server)
+
+Service type:
+  &lt;request fields&gt;
+  ---
+  &lt;response fields&gt;
+
+Example (turtlesim /spawn):
+  float32 x
+  float32 y
+  float32 theta
+  string  name
+  ---
+  string  name
+
+Calling /spawn once creates a new turtle at (x, y, theta) and returns its name.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Client:</span> Sends request</div>
+          <div class="info-chip"><span>Server:</span> Provides response</div>
+          <div class="info-chip"><span>Tool:</span> rosservice</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Parameter Server</h3>
+        <div class="eq-box">
+<span class="comment">// Global key–value store for configuration</span>
+
+Examples (turtlesim background color):
+  /turtlesim/background_r
+  /turtlesim/background_g
+  /turtlesim/background_b
+
+Basic commands:
+  rosparam list
+  rosparam get /turtlesim/background_g
+  rosparam set /turtlesim/background_b 255
+  rosservice call /clear  <span class="comment"># apply new background</span>
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Scope:</span> /namespace/param</div>
+          <div class="info-chip"><span>Type:</span> int, double, bool, string, list, dict</div>
+          <div class="info-chip"><span>Tool:</span> rosparam</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive Service Call Illustration</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual spawn / kill cost vs. frequency</span>
+
+Use the sliders to conceptually adjust:
+ - Number of service calls (spawn/kill turtles)
+ - "Cost" per call (arbitrary units)
+
+The bar below visualizes the aggregate load, mimicking how frequent service use can impact a system, compared to continuous topics.
+        </div>
+
+        <label>Number of service calls
+          <span class="val-display" id="svc-count-val">10</span>
+        </label>
+        <input type="range" id="svc-count-slider" min="1" max="100" value="10" oninput="updateSvcLoad()" />
+
+        <label>Cost per call (arb. units)
+          <span class="val-display" id="svc-cost-val">5</span>
+        </label>
+        <input type="range" id="svc-cost-slider" min="1" max="20" value="5" oninput="updateSvcLoad()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="svcCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="svc-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>Key TurtleSim Services & Params</h3>
+        <div class="eq-box">
+<span class="comment">// List main turtlesim services</span>
+
+rosservice list
+  /reset
+  /clear
+  /spawn
+  /kill
+  /turtle1/set_pen
+  /turtle1/teleport_absolute
+  /turtle1/teleport_relative
+
+<span class="comment">// Example calls</span>
+rosservice call /spawn 2.0 2.0 0.0 "turtle2"
+rosservice call /kill "turtle2"
+
+<span class="comment">// Background color parameters</span>
+rosparam get /turtlesim/background_r
+rosparam set /turtlesim/background_g 0
+rosparam set /turtlesim/background_b 0
+rosservice call /clear   <span class="comment"># apply new background color</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Explore TurtleSim Services</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Discover and use built-in services provided by turtlesim_node.
+
+<span class="comment">// Steps</span>
+1. Start:
+   roscore
+   rosrun turtlesim turtlesim_node
+2. List services:
+   rosservice list
+3. Inspect /spawn:
+   rosservice type /spawn | rossrv show
+   (request and response fields)
+4. Call:
+   rosservice call /spawn 5.0 5.0 0.0 "turtle2"
+5. Kill turtle2:
+   rosservice call /kill "turtle2"
+
+<span class="comment">// Observation</span>
+Each call is instantaneous and returns a response, unlike continuous topics.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Change Background via Parameters</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Use Parameter Server to change turtlesim background color.
+
+<span class="comment">// Steps</span>
+1. Check current values:
+   rosparam list
+   rosparam get /turtlesim/background_r
+2. Set new color, e.g., dark blue:
+   rosparam set /turtlesim/background_r 0
+   rosparam set /turtlesim/background_g 0
+   rosparam set /turtlesim/background_b 80
+3. Apply change:
+   rosservice call /clear
+
+<span class="comment">// Discussion</span>
+Parameters configure node behavior without modifying source code; this is
+analogous to changing R, L, C or m, b, k between control experiments.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Custom Service: Distance Between Turtles</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Create a custom service that returns the Euclidean distance between two
+turtles (turtle1 and turtle2).
+
+<span class="comment">// Outline</span>
+- Service type: Empty request → response float64 distance (for simplicity).
+- Server node:
+    - Subscribes to both /turtle1/pose and /turtle2/pose
+    - On request, computes:
+      d = sqrt((x2 - x1)² + (y2 - y1)²)
+- Client node:
+    - Calls service and prints distance.
+
+<span class="comment">// Analysis</span>
+Compare this to computing state error in your control labs (distance to
+reference trajectory).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>distance_srv_server.py – Service Server</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic Python</span>
+            <span class="lang-badge lang-python">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">import</span> math
+<span class="kw">from</span> turtlesim.msg <span class="kw">import</span> Pose
+<span class="kw">from</span> std_srvs.srv <span class="kw">import</span> Trigger, TriggerResponse
+
+<span class="var">pose1</span> = Pose()
+<span class="var">pose2</span> = Pose()
+
+<span class="kw">def</span> <span class="fn">cb_t1</span>(msg):
+    <span class="kw">global</span> pose1
+    pose1 = msg
+
+<span class="kw">def</span> <span class="fn">cb_t2</span>(msg):
+    <span class="kw">global</span> pose2
+    pose2 = msg
+
+<span class="kw">def</span> <span class="fn">handle_distance</span>(req):
+    dx = pose2.x - pose1.x
+    dy = pose2.y - pose1.y
+    d  = math.sqrt(dx*dx + dy*dy)
+    resp = TriggerResponse()
+    resp.success = <span class="kw">True</span>
+    resp.message = f<span class="str">"Distance between turtles: {d:.3f}"</span>
+    <span class="kw">return</span> resp
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    rospy.init_node(<span class="str">'distance_srv_server'</span>)
+    rospy.Subscriber(<span class="str">'/turtle1/pose'</span>, Pose, cb_t1)
+    rospy.Subscriber(<span class="str">'/turtle2/pose'</span>, Pose, cb_t2)
+    srv = rospy.Service(<span class="str">'/turtles_distance'</span>, Trigger, handle_distance)
+    rospy.loginfo(<span class="str">'Distance service ready: /turtles_distance'</span>)
+    rospy.spin()
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    <span class="kw">try</span>:
+        main()
+    <span class="kw">except</span> rospy.ROSInterruptException:
+        <span class="kw">pass</span>
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>distance_srv_client.py – Service Client</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic Python</span>
+            <span class="lang-badge lang-python">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">from</span> std_srvs.srv <span class="kw">import</span> Trigger
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    rospy.init_node(<span class="str">'distance_srv_client'</span>)
+    rospy.wait_for_service(<span class="str">'/turtles_distance'</span>)
+    srv = rospy.ServiceProxy(<span class="str">'/turtles_distance'</span>, Trigger)
+
+    <span class="kw">try</span>:
+        resp = srv()
+        rospy.loginfo(resp.message)
+    <span class="kw">except</span> rospy.ServiceException <span class="kw">as</span> e:
+        rospy.logerr(<span class="str">"Service call failed: %s"</span>, e)
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    main()
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Parameter Example – YAML Load</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Launch + YAML</span>
+            <span class="lang-badge lang-python">YAML/XML</span>
+          </div>
+          <pre>
+<span class="cmt"># turtlesim_params.yaml</span>
+turtlesim:
+  background_r: 30
+  background_g: 30
+  background_b: 120
+
+<span class="cmt">&lt;!-- launch_turtlesim_params.launch --&gt;</span>
+&lt;launch&gt;
+  &lt;rosparam file="<span class="str">$(find your_pkg)/config/turtlesim_params.yaml</span>" command="load" /&gt;
+  &lt;node pkg="<span class="str">turtlesim</span>" type="<span class="str">turtlesim_node</span>" name="<span class="str">turtlesim</span>" output="<span class="str">screen</span>" /&gt;
+&lt;/launch&gt;
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>CLI Summary – Services & Params</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic CLI</span>
+            <span class="lang-badge lang-python">Shell</span>
+          </div>
+          <pre>
+<span class="cmt"># Services</span>
+rosservice list
+rosservice type /spawn
+rosservice call /spawn 3 3 0.0 "turtle2"
+rosservice call /kill "turtle2"
+
+<span class="cmt"># Parameters</span>
+rosparam list
+rosparam get /turtlesim/background_r
+rosparam set /turtlesim/background_r 255
+rosparam set /turtlesim/background_g 255
+rosparam set /turtlesim/background_b 255
+rosservice call /clear
+
+<span class="cmt"># Full parameter tree</span>
+rosparam get /
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) Differentiate between topics, services, and parameters in ROS.
+2) List at least four services provided by turtlesim_node and their roles.
+3) What is the difference between a service type and a service instance?
+4) How does Parameter Server help you avoid recompiling code for each experiment?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Extend the distance service to also report bearing angle between turtles, similar to computing phase difference in control experiments.
+
+2) Create a "reset_lab" service that:
+   - Kills all extra turtles,
+   - Resets background to default,
+   - Calls /reset to reposition turtle1.
+
+3) Use rosparam to store controller gains (Kp, Ki, Kd) for a TurtleSim pose controller and show how changing them at runtime affects performance.
+
+4) Combine this practice with your Topics lab: publish customized pen colors and background schemes via parameters before running motion experiments.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updateSvcLoad() {
+      const count = parseFloat(document.getElementById('svc-count-slider').value);
+      const cost  = parseFloat(document.getElementById('svc-cost-slider').value);
+      document.getElementById('svc-count-val').textContent = count.toFixed(0);
+      document.getElementById('svc-cost-val').textContent  = cost.toFixed(0);
+
+      const load = count * cost;
+      drawSvcBar('svcCanvas', load, count, cost);
+
+      const infoDiv = document.getElementById('svc-info');
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>Calls:</span> ' + count.toFixed(0) + '</div>' +
+        '<div class="info-chip"><span>Cost:</span> ' + cost.toFixed(0) + '</div>' +
+        '<div class="info-chip"><span>Load:</span> ' + load.toFixed(0) + ' units</div>';
+    }
+
+    function drawSvcBar(canvasId, load, count, cost) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 20, t: 20, b: 30 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      const maxLoad = 2000;
+      const norm = Math.min(1.0, load / maxLoad);
+      const barWidth = pw * norm;
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+      const grad = ctx.createLinearGradient(pad.l, pad.t, pad.l + pw, pad.t);
+      grad.addColorStop(0, '#4fcc7a');
+      grad.addColorStop(1, '#f7914f');
+      ctx.fillStyle = grad;
+      ctx.fillRect(pad.l, pad.t, barWidth, ph);
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Aggregate service load (conceptual units)', pad.l, pad.t + ph + 18);
+      ctx.fillText(load.toFixed(0) + ' units', pad.l + 4, pad.t + ph / 2 + 4);
+    }
+
+    window.addEventListener('load', () => {
+      updateSvcLoad();
+    });
+  </script>
+</body>
+</html>

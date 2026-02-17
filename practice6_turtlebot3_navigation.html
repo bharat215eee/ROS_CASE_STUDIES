@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 6 – TurtleBot3 Navigation: Mapping & Localization</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .content { padding: 28px 32px; display: none; }
+    .content.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .eq-box .comment { color: #6a737d; }
+    .eq-box .highlight { color: var(--accent); font-weight: bold; }
+    .eq-box .highlight2 { color: var(--accent2); font-weight: bold; }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .info-chip span { color: var(--text); font-weight: 600; }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .lang-xml {
+      background: #e44c1c22;
+      color: #e44c1c;
+      border: 1px solid #e44c1c44;
+    }
+    .lang-yaml {
+      background: #3572a522;
+      color: #4d9fdb;
+      border: 1px solid #3572a544;
+    }
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 6</span>
+        <h1>TurtleBot3 Navigation – Mapping & Localization</h1>
+      </div>
+      <p>ROS Noetic • SLAM • AMCL • move_base • 2D Nav Goals</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('theory')">SLAM & Navigation</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">Launch & Config</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- THEORY TAB -->
+  <div id="tab-theory" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>SLAM vs Navigation (Known Map)</h3>
+        <div class="eq-box">
+<span class="comment">// Two phases with TurtleBot3</span>
+
+<span class="highlight">SLAM (gmapping / slam_toolbox)</span>
+  - Build 2D occupancy grid map using LIDAR + odometry.
+  - Robot explores environment; node outputs /map.
+
+<span class="highlight">Navigation (move_base + AMCL)</span>
+  - Use saved /map for localization and path planning.
+  - AMCL estimates pose on map with LIDAR + odometry.
+  - move_base plans path and sends velocity commands /cmd_vel.
+
+Pipeline (ROS1 typical):
+  /scan, /odom → SLAM → /map
+  /map, /scan, /odom → AMCL → /amcl_pose
+  /map, /amcl_pose, costmaps → move_base → /cmd_vel.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>SLAM:</span> build map</div>
+          <div class="info-chip"><span>AMCL:</span> localize</div>
+          <div class="info-chip"><span>move_base:</span> plan & control</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Key Topics & Frames</h3>
+        <div class="eq-box">
+<span class="comment">// Main topics for TurtleBot3 navigation</span>
+
+Sensors:
+  /scan           : LIDAR scans
+  /odom           : wheel odometry
+Frames:
+  map → odom → base_link → base_scan
+
+Navigation:
+  /map            : occupancy grid (from SLAM or map_server)
+  /amcl_pose      : estimated pose in map frame
+  /move_base_simple/goal : 2D Nav Goal from RViz
+  /cmd_vel        : velocity commands to robot base
+
+Using RViz:
+  - Use “2D Pose Estimate” to initialize AMCL.
+  - Use “2D Nav Goal” to send goals (x, y, θ) on the map.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Sensors:</span> /scan, /odom</div>
+          <div class="info-chip"><span>Pose:</span> /amcl_pose</div>
+          <div class="info-chip"><span>Control:</span> /cmd_vel</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive Goal vs Path Cost Sketch</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual path-cost visualization</span>
+
+Adjust:
+ - Goal distance (m)
+ - Obstacle density (0–1)
+to see a qualitative “path cost” bar, relating longer paths and cluttered
+maps to higher navigation cost (time/energy/risk).
+        </div>
+
+        <label>Goal distance (m)
+          <span class="val-display" id="dist-val">3.0</span>
+        </label>
+        <input type="range" id="dist-slider" min="0.5" max="10.0" step="0.5" value="3.0" oninput="updatePathCost()" />
+
+        <label>Obstacle density (0–1)
+          <span class="val-display" id="obs-val">0.3</span>
+        </label>
+        <input type="range" id="obs-slider" min="0.0" max="1.0" step="0.05" value="0.3" oninput="updatePathCost()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="costCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="cost-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>High-Level TurtleBot3 Workflows</h3>
+        <div class="eq-box">
+<span class="comment">// From official TurtleBot3 e-Manual (ROS1)</span>
+
+1) SLAM (mapping):
+   - Launch robot + SLAM node (e.g., gmapping).
+   - Teleop or autonomous exploration.
+   - Save map:
+     rosrun map_server map_saver -f ~/map
+
+2) Navigation on known map:
+   - Launch robot + AMCL + move_base with saved map.
+   - In RViz: set “2D Pose Estimate”, then send “2D Nav Goal”.
+   - Robot plans and moves autonomously to goal.
+
+This mirrors control-lab workflows where you first identify/estimate a
+model, then use it for feedback control and path planning.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – SLAM Mapping with TurtleBot3</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Use TurtleBot3 (sim or real) to build a 2D map using SLAM.
+
+<span class="comment">// Steps (typical Gazebo sim)</span>
+1. Export model:
+   export TURTLEBOT3_MODEL=burger
+2. Launch simulation + SLAM:
+   roslaunch turtlebot3_gazebo turtlebot3_world.launch
+   roslaunch turtlebot3_slam turtlebot3_slam.launch
+3. Run teleop:
+   roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
+4. Drive the robot to cover the environment; observe /map in RViz.
+5. Save map:
+   rosrun map_server map_saver -f ~/turtlebot3_map
+
+<span class="comment">// Observation</span>
+Relate coverage pattern to quality and completeness of the occupancy grid.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Navigation on Known Map (move_base + AMCL)</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Use AMCL + move_base to autonomously navigate on the saved map.
+
+<span class="comment">// Typical steps</span>
+1. Launch robot + navigation:
+   export TURTLEBOT3_MODEL=burger
+   roslaunch turtlebot3_navigation turtlebot3_navigation.launch \
+     map_file:=$HOME/turtlebot3_map.yaml
+2. In RViz:
+   - Use “2D Pose Estimate” to roughly localize robot.
+   - Use “2D Nav Goal” to send target pose (x, y, θ).
+3. Observe local/global costmaps, planned path, and executed path.
+
+<span class="comment">// Discussion</span>
+Connect this to reference tracking in control: goal pose = reference,
+move_base = high-level controller shaping /cmd_vel stream.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Simple Autonomous Exploration</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Automatically generate exploratory navigation goals to complete mapping.
+
+<span class="comment">// Idea (reference implementation)</span>
+- create a node that repeatedly:
+  1) samples frontier-like or random points in free space,
+  2) sends them as 2D Nav Goals to move_base,
+  3) waits until robot stops or goal is reached.
+
+<span class="comment">// Steps</span>
+1. Use an existing explore.launch (e.g., in Turtlebot3-Navigation-with-SLAM)
+   or your own node.
+2. Run SLAM + explore, watch map fill in automatically.
+3. Save resulting map and compare coverage vs manual teleop mapping.
+
+<span class="comment">// Analysis</span>
+Discuss trade-offs between exploration strategy and time/energy cost.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>turtlebot3_slam.launch (conceptual)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>SLAM Launch</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- Simplified SLAM launch (adapt to lab setup) --&gt;
+&lt;launch&gt;
+  &lt;arg name="model" default="burger"/&gt;
+  &lt;env name="TURTLEBOT3_MODEL" value="$(arg model)"/&gt;
+
+  &lt;include file="$(find turtlebot3_gazebo)/launch/turtlebot3_world.launch"/&gt;
+
+  &lt;node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen"&gt;
+    &lt;param name="odom_frame" value="odom"/&gt;
+    &lt;param name="map_update_interval" value="2.0"/&gt;
+  &lt;/node&gt;
+
+  &lt;node pkg="rviz" type="rviz" name="rviz"
+        args="-d $(find turtlebot3_slam)/rviz/turtlebot3_slam.rviz"/&gt;
+&lt;/launch&gt;
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>turtlebot3_navigation.launch (conceptual)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Navigation Launch</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- Simplified navigation launch (ROS1 move_base + AMCL) --&gt;
+&lt;launch&gt;
+  &lt;arg name="map_file" default="$(env HOME)/turtlebot3_map.yaml"/&gt;
+  &lt;arg name="model" default="burger"/&gt;
+  &lt;env name="TURTLEBOT3_MODEL" value="$(arg model)"/&gt;
+
+  &lt;include file="$(find turtlebot3_bringup)/launch/turtlebot3_robot.launch"/&gt;
+
+  &lt;node pkg="map_server" type="map_server" name="map_server"
+        args="$(arg map_file)"/&gt;
+
+  &lt;node pkg="amcl" type="amcl" name="amcl" output="screen"&gt;
+    &lt;param name="odom_frame_id" value="odom"/&gt;
+    &lt;param name="base_frame_id" value="base_footprint"/&gt;
+    &lt;param name="global_frame_id" value="map"/&gt;
+  &lt;/node&gt;
+
+  &lt;include file="$(find turtlebot3_navigation)/launch/move_base.launch"/&gt;
+
+  &lt;node pkg="rviz" type="rviz" name="rviz"
+        args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation.rviz"/&gt;
+&lt;/launch&gt;
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Example move_base YAML (costmaps)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Costmap Parameters</span>
+            <span class="lang-badge lang-yaml">YAML</span>
+          </div>
+          <pre>
+# global_costmap_params.yaml (excerpt)
+global_costmap:
+  global_frame: map
+  robot_base_frame: base_footprint
+  update_frequency: 5.0
+  publish_frequency: 2.0
+  resolution: 0.05
+  transform_tolerance: 0.5
+  inflation_radius: 0.5
+  cost_scaling_factor: 10.0
+
+# local_costmap_params.yaml (excerpt)
+local_costmap:
+  global_frame: odom
+  robot_base_frame: base_footprint
+  update_frequency: 10.0
+  publish_frequency: 5.0
+  resolution: 0.05
+  inflation_radius: 0.4
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>CLI Summary – SLAM & Navigation</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic CLI</span>
+            <span class="lang-badge lang-xml">Shell</span>
+          </div>
+          <pre>
+<span class="cmt"># Mapping with TurtleBot3</span>
+export TURTLEBOT3_MODEL=burger
+roslaunch turtlebot3_gazebo turtlebot3_world.launch
+roslaunch turtlebot3_slam turtlebot3_slam.launch
+roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
+
+rosrun map_server map_saver -f ~/turtlebot3_map
+
+<span class="cmt"># Navigation on known map</span>
+export TURTLEBOT3_MODEL=burger
+roslaunch turtlebot3_navigation turtlebot3_navigation.launch \
+  map_file:=$HOME/turtlebot3_map.yaml
+
+<span class="cmt"># In RViz</span>
+- Use 2D Pose Estimate
+- Use 2D Nav Goal to command robot
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) Explain the difference between SLAM and AMCL in the TurtleBot3 workflow.
+2) What information is contained in /map vs /odom vs /amcl_pose?
+3) How does move_base compute a path to a 2D Nav Goal? What is a global vs local planner?
+4) Why is accurate TF (map → odom → base_link) essential for navigation?
+5) What factors affect map quality when using gmapping or slam_toolbox?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Implement a simple “patrol” node that sends a sequence of Nav Goals to move_base, making TurtleBot3 patrol a set of waypoints.
+
+2) Integrate an A* path planner that computes a path on the occupancy grid and feeds waypoints to move_base, comparing its paths with the default global planner.
+
+3) Evaluate the effect of costmap parameters (inflation_radius, resolution) on path clearance and smoothness, similar to changing design margins in control-system design.
+
+4) Compare performance of different SLAM backends (gmapping vs rtabmap vs slam_toolbox) in the same environment and discuss map quality vs CPU.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updatePathCost() {
+      const dist = parseFloat(document.getElementById('dist-slider').value);
+      const obs  = parseFloat(document.getElementById('obs-slider').value);
+      document.getElementById('dist-val').textContent = dist.toFixed(1);
+      document.getElementById('obs-val').textContent  = obs.toFixed(2);
+
+      const cost = dist * (1 + 3 * obs);
+      drawCostBar('costCanvas', cost, dist, obs);
+
+      const infoDiv = document.getElementById('cost-info');
+      let level = 'Low';
+      if (cost > 10 && cost <= 20) level = 'Medium';
+      else if (cost > 20) level = 'High';
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>Distance:</span> ' + dist.toFixed(1) + ' m</div>' +
+        '<div class="info-chip"><span>Obstacles:</span> ' + obs.toFixed(2) + '</div>' +
+        '<div class="info-chip"><span>Path cost:</span> ' + level + '</div>';
+    }
+
+    function drawCostBar(canvasId, cost, dist, obs) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 20, t: 20, b: 30 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      const maxCost = 30;
+      const norm = Math.min(1.0, cost / maxCost);
+      const barWidth = pw * norm;
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+      const grad = ctx.createLinearGradient(pad.l, pad.t, pad.l + pw, pad.t);
+      grad.addColorStop(0, '#4fcc7a');
+      grad.addColorStop(0.6, '#f7d14f');
+      grad.addColorStop(1, '#f74f4f');
+      ctx.fillStyle = grad;
+      ctx.fillRect(pad.l, pad.t, barWidth, ph);
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Qualitative path cost (distance × clutter)', pad.l, pad.t + ph + 18);
+      ctx.fillText('d=' + dist.toFixed(1) + ', obs=' + obs.toFixed(2), pad.l + 4, pad.t + ph / 2 + 4);
+    }
+
+    window.addEventListener('load', () => {
+      updatePathCost();
+    });
+  </script>
+</body>
+</html>

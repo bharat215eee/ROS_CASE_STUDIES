@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 9 – ROSserial with Arduino: Differential Drive Interface</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .content { padding: 28px 32px; display: none; }
+    .content.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .eq-box .comment { color: #6a737d; }
+    .eq-box .highlight { color: var(--accent); font-weight: bold; }
+    .eq-box .highlight2 { color: var(--accent2); font-weight: bold; }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .info-chip span { color: var(--text); font-weight: 600; }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .lang-ino {
+      background: #4fc38b22;
+      color: #4fc38b;
+      border: 1px solid #4fc38b55;
+    }
+    .lang-xml {
+      background: #e44c1c22;
+      color: #e44c1c;
+      border: 1px solid #e44c1c44;
+    }
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+    .type { color: #79c0ff; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 9</span>
+        <h1>ROSserial with Arduino – Differential Drive Interface</h1>
+      </div>
+      <p>ROS Noetic • rosserial_arduino • /cmd_vel • PWM Motor Control</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('theory')">ROSserial Concepts</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">Arduino & ROS Code</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- THEORY TAB -->
+  <div id="tab-theory" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>What is ROSserial?</h3>
+        <div class="eq-box">
+<span class="comment">// Lightweight ROS client over serial links</span>
+
+<span class="highlight">rosserial</span> allows microcontrollers (Arduino, STM32, ESP8266, etc.)
+to act as ROS nodes over serial or TCP, using a small C++ client library.
+
+Core components:
+  - rosserial_arduino: Arduino-side client library.
+  - rosserial_python / rosserial_server: PC-side bridge node.
+  - Transport: USB (/dev/ttyUSB0), serial, or network.
+
+Typical workflow:
+  Arduino &lt;—serial—&gt; rosserial_python &lt;—ROS messages—&gt; rest of ROS graph.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>MCU:</span> Arduino node</div>
+          <div class="info-chip"><span>Bridge:</span> rosserial_python</div>
+          <div class="info-chip"><span>ROS:</span> Topics/services</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Basic Blink Example</h3>
+        <div class="eq-box">
+<span class="comment">// From rosserial Arduino Blink tutorial</span>
+
+Sketch idea:
+  - Subscribe to <span class="highlight">toggle_led</span> (std_msgs/Empty).
+  - On each message: toggle LED on pin 13.
+
+Key pieces:
+  ros::NodeHandle nh;
+  <span class="type">void</span> messageCb(<span class="kw">const</span> std_msgs::Empty& msg) {
+    digitalWrite(13, HIGH - digitalRead(13));
+  }
+  ros::Subscriber&lt;std_msgs::Empty&gt; sub(<span class="str">"toggle_led"</span>, &messageCb);
+
+In setup():
+  nh.initNode();
+  nh.subscribe(sub);
+
+In loop():
+  nh.spinOnce();
+  delay(1);
+
+This is the minimal pattern you will extend to motor control.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Msg:</span> std_msgs/Empty</div>
+          <div class="info-chip"><span>Pin:</span> 13 LED</div>
+          <div class="info-chip"><span>Callback:</span> toggles output</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>/cmd_vel to PWM Concept</h3>
+        <div class="eq-box">
+<span class="comment">// Differential drive control on Arduino</span>
+
+ROS side:
+  /cmd_vel (geometry_msgs/Twist)
+    - linear.x : forward/backward velocity
+    - angular.z: yaw rate
+
+Arduino side:
+  - Subscribe to /cmd_vel.
+  - Compute wheel velocities (ω_r, ω_l) from v, ω.
+  - Map wheel velocities to PWM and direction pins.
+
+High-level idea:
+  ROS controllers compute v, ω
+  → rosserial sends them to Arduino
+  → Arduino drives H-bridges/motor drivers.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Input:</span> /cmd_vel</div>
+          <div class="info-chip"><span>Output:</span> PWM to motors</div>
+          <div class="info-chip"><span>MCU role:</span> low-level actuation</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>Setup Steps (Noetic + Arduino IDE)</h3>
+        <div class="eq-box">
+<span class="comment">// From official rosserial Arduino setup</span>
+
+1) Install packages:
+   sudo apt install ros-noetic-rosserial ros-noetic-rosserial-arduino \
+                    ros-noetic-rosserial-python
+
+2) Generate Arduino libraries:
+   roscore
+   cd &lt;your_arduino_sketchbook&gt;/libraries
+   rosrun rosserial_arduino make_libraries.py 
+
+3) In Arduino IDE:
+   - Add the generated ros_lib folder.
+   - Select board and serial port.
+
+This gives you ros.h, message headers, and examples directly in the IDE.
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive v–ω Command Sketch</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual mapping from /cmd_vel to wheel speeds</span>
+
+Adjust:
+ - linear velocity v (m/s)
+ - angular velocity ω (rad/s)
+to see approximate left/right wheel speeds (normalized), representing what
+your Arduino must implement via PWM.
+        </div>
+
+        <label>Linear velocity v (m/s)
+          <span class="val-display" id="v-val">0.2</span>
+        </label>
+        <input type="range" id="v-slider" min="-0.5" max="0.5" step="0.05" value="0.2" oninput="updateWheels()" />
+
+        <label>Angular velocity ω (rad/s)
+          <span class="val-display" id="w-val">0.0</span>
+        </label>
+        <input type="range" id="w-slider" min="-2.0" max="2.0" step="0.1" value="0.0" oninput="updateWheels()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="wheelCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="wheel-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4f8ef7;"></span>PC-side rosserial Bridge</h3>
+        <div class="eq-box">
+<span class="comment">// Connecting Arduino into ROS graph</span>
+
+Serial bridge:
+  rosrun rosserial_python serial_node.py /dev/ttyACM0
+
+Socket/server option:
+  roslaunch rosserial_server socket.launch
+
+Once running:
+  - Arduino appears as a node in rqt_graph.
+  - Its publishers/subscribers show up in rostopic list.
+
+You can then drive the robot with teleop_twist_keyboard or your own
+controllers publishing /cmd_vel.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Blink LED via ROS Topic</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Reproduce the official Blink example: toggle Arduino LED from ROS.
+
+<span class="comment">// Steps</span>
+1. Load Blink sketch (toggle_led subscriber) to Arduino.
+2. Start roscore.
+3. Run serial bridge:
+   rosrun rosserial_python serial_node.py /dev/ttyACM0
+4. From PC:
+   rostopic pub /toggle_led std_msgs/Empty --once
+
+<span class="comment">// Observation</span>
+Verify that the LED toggles with each message, confirming end-to-end
+ROS → serial → Arduino → GPIO operation.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Read Wheel Encoders and Publish Odometry (conceptual)</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Publish wheel encoder counts from Arduino to ROS for odometry.
+
+<span class="comment">// Steps (sketch outline)</span>
+1. Attach interrupt handlers for left/right encoders.
+2. In loop(), compute tick counts since last cycle.
+3. Publish them as:
+   - either custom message (ticks_left, ticks_right), or
+   - nav_msgs/Odometry if you also integrate distance and angle.
+4. On PC, record topic with rosbag and plot ticks vs time.
+
+<span class="comment">// Discussion</span>
+Relate encoder resolution, wheel radius, and sampling period to velocity
+estimation accuracy and noise.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Drive Differential Robot via /cmd_vel</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Use /cmd_vel to command your small differential-drive platform through Arduino.
+
+<span class="comment">// Steps</span>
+1. Implement Arduino sketch subscribing to /cmd_vel and driving two motors
+   (PWM + direction for each motor).
+2. On PC, launch:
+   rosrun rosserial_python serial_node.py /dev/ttyACM0
+3. Use:
+   rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+   - Topic: /cmd_vel
+4. Observe robot motion; test forward, reverse, rotate-in-place, arcs.
+
+<span class="comment">// Analysis</span>
+Relate differences between commanded and actual path to motor saturation,
+battery voltage, friction, and wheel slip.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#4fc38b;"></span>arduino_blink.ino – ROSserial Blink</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Arduino + rosserial</span>
+            <span class="lang-badge lang-ino">INO</span>
+          </div>
+          <pre>
+<span class="cmt">// Minimal blink sketch from rosserial tutorial (conceptual)</span>
+<span class="kw">#include</span> &lt;ros.h&gt;
+<span class="kw">#include</span> &lt;std_msgs/Empty.h&gt;
+
+ros::NodeHandle nh;
+
+<span class="kw">void</span> messageCb(<span class="kw">const</span> std_msgs::Empty&amp; toggle_msg) {
+  digitalWrite(13, HIGH - digitalRead(13)); <span class="cmt">// toggle LED</span>
+}
+
+ros::Subscriber&lt;std_msgs::Empty&gt; sub(<span class="str">"toggle_led"</span>, &messageCb);
+
+<span class="kw">void</span> setup() {
+  pinMode(13, OUTPUT);
+  nh.initNode();
+  nh.subscribe(sub);
+}
+
+<span class="kw">void</span> loop() {
+  nh.spinOnce();
+  delay(1);
+}
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>arduino_diffdrive_cmdvel.ino – /cmd_vel to Motors</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Arduino + rosserial</span>
+            <span class="lang-badge lang-ino">INO</span>
+          </div>
+          <pre>
+<span class="kw">#include</span> &lt;ros.h&gt;
+<span class="kw">#include</span> &lt;geometry_msgs/Twist.h&gt;
+
+ros::NodeHandle nh;
+
+<span class="cmt">// Motor pins</span>
+<span class="kw">const int</span> L_PWM = 5;
+<span class="kw">const int</span> L_DIR = 4;
+<span class="kw">const int</span> R_PWM = 6;
+<span class="kw">const int</span> R_DIR = 7;
+
+<span class="cmt">// Robot parameters</span>
+<span class="kw">const float</span> WHEEL_RADIUS = 0.05;  <span class="cmt">// m</span>
+<span class="kw">const float</span> TRACK_WIDTH  = 0.30;  <span class="cmt">// m</span>
+<span class="kw">const float</span> MAX_LINEAR   = 0.5;   <span class="cmt">// m/s (for scaling)</span>
+<span class="kw">const float</span> MAX_ANGULAR  = 2.0;   <span class="cmt">// rad/s</span>
+
+<span class="kw">void</span> cmdVelCb(<span class="kw">const</span> geometry_msgs::Twist&amp; msg) {
+  <span class="kw">float</span> v = msg.linear.x;
+  <span class="kw">float</span> w = msg.angular.z;
+
+  <span class="cmt">// Clip to safety limits</span>
+  <span class="kw">if</span> (v &gt;  MAX_LINEAR)  v =  MAX_LINEAR;
+  <span class="kw">if</span> (v &lt; -MAX_LINEAR) v = -MAX_LINEAR;
+  <span class="kw">if</span> (w &gt;  MAX_ANGULAR) w =  MAX_ANGULAR;
+  <span class="kw">if</span> (w &lt; -MAX_ANGULAR) w = -MAX_ANGULAR;
+
+  <span class="cmt">// Unicycle → differential</span>
+  <span class="kw">float</span> v_r = v + (TRACK_WIDTH / 2.0f) * w;
+  <span class="kw">float</span> v_l = v - (TRACK_WIDTH / 2.0f) * w;
+
+  <span class="cmt">// Map wheel linear velocities to normalized PWM (-1..1)</span>
+  <span class="kw">float</span> v_max = MAX_LINEAR + (TRACK_WIDTH / 2.0f) * MAX_ANGULAR;
+  <span class="kw">float</span> u_r = v_r / v_max;
+  <span class="kw">float</span> u_l = v_l / v_max;
+
+  <span class="cmt">// Convert to direction + magnitude</span>
+  <span class="kw">int</span> dir_r = (u_r &gt;= 0) ? HIGH : LOW;
+  <span class="kw">int</span> dir_l = (u_l &gt;= 0) ? HIGH : LOW;
+
+  <span class="kw">int</span> pwm_r = (int)(min(1.0f, abs(u_r)) * 255.0f);
+  <span class="kw">int</span> pwm_l = (int)(min(1.0f, abs(u_l)) * 255.0f);
+
+  digitalWrite(R_DIR, dir_r);
+  analogWrite(R_PWM, pwm_r);
+
+  digitalWrite(L_DIR, dir_l);
+  analogWrite(L_PWM, pwm_l);
+}
+
+ros::Subscriber&lt;geometry_msgs::Twist&gt; sub_cmd(<span class="str">"cmd_vel"</span>, &cmdVelCb);
+
+<span class="kw">void</span> setup() {
+  pinMode(L_PWM, OUTPUT);
+  pinMode(L_DIR, OUTPUT);
+  pinMode(R_PWM, OUTPUT);
+  pinMode(R_DIR, OUTPUT);
+
+  analogWrite(L_PWM, 0);
+  analogWrite(R_PWM, 0);
+
+  nh.initNode();
+  nh.subscribe(sub_cmd);
+}
+
+<span class="kw">void</span> loop() {
+  nh.spinOnce();
+  delay(10);
+}
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>PC Launch – rosserial + Teleop</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Launch</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- launch_diffdrive_rosserial.launch --&gt;
+&lt;launch&gt;
+  &lt;arg name="port"   default="/dev/ttyACM0"/&gt;
+  &lt;arg name="baud"   default="57600"/&gt;
+
+  &lt;node pkg="rosserial_python" type="serial_node.py"
+        name="rosserial_arduino" output="screen"&gt;
+    &lt;param name="port" value="$(arg port)"/&gt;
+    &lt;param name="baud" value="$(arg baud)"/&gt;
+  &lt;/node&gt;  &lt;!-- Arduino node now in ROS graph --&gt;
+
+  &lt;node pkg="teleop_twist_keyboard"
+        type="teleop_twist_keyboard.py"
+        name="teleop" output="screen"&gt;
+    &lt;remap from="/cmd_vel" to="/cmd_vel"/&gt;
+  &lt;/node&gt;
+&lt;/launch&gt;
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>CLI Summary – Setup & Test</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic CLI</span>
+            <span class="lang-badge lang-xml">Shell</span>
+          </div>
+          <pre>
+<span class="cmt"># 1. Create Arduino ros_lib once</span>
+roscore
+cd &lt;arduino_sketchbook&gt;/libraries
+rosrun rosserial_arduino make_libraries.py 
+
+<span class="cmt"># 2. Upload blink.ino or diffdrive_cmdvel.ino from Arduino IDE</span>
+
+<span class="cmt"># 3. Run rosserial bridge</span>
+roscore
+rosrun rosserial_python serial_node.py /dev/ttyACM0
+
+<span class="cmt"># 4a. Blink test</span>
+rostopic pub /toggle_led std_msgs/Empty --once
+
+<span class="cmt"># 4b. Differential drive test</span>
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+# Topic: /cmd_vel
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) What is rosserial and why is it useful for integrating microcontrollers with ROS?
+2) Describe the data path from /cmd_vel on the PC to motor PWM signals on the Arduino-based differential-drive robot.
+3) How does the rosserial NodeHandle differ from rospy/roscpp NodeHandle?
+4) What issues can arise from low baud rates or noisy serial connections in this architecture?
+5) How would you incorporate encoder feedback into this loop to implement a PID speed controller on the Arduino?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Implement a simple PID speed controller on Arduino, using encoder ticks to track desired wheel velocities derived from /cmd_vel.
+
+2) Replace the serial bridge with rosserial_server over Wi‑Fi (e.g., via ESP8266/ESP32) and compare latency and robustness.
+
+3) Add diagnostic publishers from Arduino (battery voltage, motor currents) and visualize them in rqt_plot and rqt_multiplot.
+
+4) Combine with Practice 5–6: use the same /cmd_vel stream used in Gazebo to drive the real robot via rosserial, demonstrating “simulation to reality” transfer.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updateWheels() {
+      const v = parseFloat(document.getElementById('v-slider').value);
+      const w = parseFloat(document.getElementById('w-slider').value);
+      document.getElementById('v-val').textContent = v.toFixed(2);
+      document.getElementById('w-val').textContent = w.toFixed(2);
+
+      const L = 0.30;
+      const vmax = 0.5;
+      const wmax = 2.0;
+      const v_r = v + (L / 2.0) * w;
+      const v_l = v - (L / 2.0) * w;
+      const v_lim = vmax + (L / 2.0) * wmax;
+      let u_r = v_r / v_lim;
+      let u_l = v_l / v_lim;
+      u_r = Math.max(-1, Math.min(1, u_r));
+      u_l = Math.max(-1, Math.min(1, u_l));
+
+      drawWheelBars('wheelCanvas', u_l, u_r);
+
+      const infoDiv = document.getElementById('wheel-info');
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>v:</span> ' + v.toFixed(2) + ' m/s</div>' +
+        '<div class="info-chip"><span>ω:</span> ' + w.toFixed(2) + ' rad/s</div>' +
+        '<div class="info-chip"><span>u_l:</span> ' + u_l.toFixed(2) + '</div>' +
+        '<div class="info-chip"><span>u_r:</span> ' + u_r.toFixed(2) + '</div>';
+    }
+
+    function drawWheelBars(canvasId, u_l, u_r) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 40, t: 20, b: 30 };
+      const midY = pad.t + (H - pad.t - pad.b) / 2;
+      const barW = (W - pad.l - pad.r) / 4;
+      const maxH = (H - pad.t - pad.b) / 2 - 10;
+
+      function drawBar(xCenter, u, label) {
+        const h = maxH * Math.abs(u);
+        const yTop = midY - (u >= 0 ? h : 0);
+        const color = u >= 0 ? '#4fcc7a' : '#f7914f';
+        ctx.fillStyle = color;
+        ctx.fillRect(xCenter - barW / 2, yTop, barW, h);
+        ctx.fillStyle = '#8891a8';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(label, xCenter - barW / 2, midY + maxH + 14);
+      }
+
+      const xL = pad.l + barW;
+      const xR = W - pad.r - barW;
+
+      drawBar(xL, u_l, 'Left wheel');
+      drawBar(xR, u_r, 'Right wheel');
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.beginPath();
+      ctx.moveTo(pad.l, midY);
+      ctx.lineTo(W - pad.r, midY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Normalized wheel commands (conceptual PWM)', pad.l, pad.t + 12);
+    }
+
+    window.addEventListener('load', () => {
+      updateWheels();
+    });
+  </script>
+</body>
+</html>

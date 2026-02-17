@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 4 – URDF Modeling of a Differential Drive Robot</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .content { padding: 28px 32px; display: none; }
+    .content.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .eq-box .comment { color: #6a737d; }
+    .eq-box .highlight { color: var(--accent); font-weight: bold; }
+    .eq-box .highlight2 { color: var(--accent2); font-weight: bold; }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .info-chip span { color: var(--text); font-weight: 600; }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .lang-xml {
+      background: #e44c1c22;
+      color: #e44c1c;
+      border: 1px solid #e44c1c44;
+    }
+    .lang-xacro {
+      background: #3572a522;
+      color: #4d9fdb;
+      border: 1px solid #3572a544;
+    }
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 4</span>
+        <h1>URDF Modeling of a Differential Drive Robot</h1>
+      </div>
+      <p>ROS Noetic • URDF • Links & Joints • Xacro • RViz Visualization</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('model')">URDF Concepts</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">URDF & Xacro</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- MODEL TAB -->
+  <div id="tab-model" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>URDF Building Blocks</h3>
+        <div class="eq-box">
+<span class="comment">// Unified Robot Description Format (URDF)</span>
+
+Core elements:
+  <span class="highlight">&lt;link&gt;</span>  : rigid body (e.g., chassis, wheel)
+  <span class="highlight">&lt;joint&gt;</span> : constraint between two links (revolute, fixed)
+  <span class="highlight">&lt;inertial&gt;</span>, &lt;visual&gt;, &lt;collision&gt; : physical & visual properties
+
+Example skeleton:
+  &lt;robot name="dd_robot"&gt;
+    &lt;link  name="base_link"&gt; ... &lt;/link&gt;
+    &lt;link  name="wheel_left"&gt; ... &lt;/link&gt;
+    &lt;link  name="wheel_right"&gt; ... &lt;/link&gt;
+
+    &lt;joint name="left_wheel_joint"  type="continuous"&gt; ... &lt;/joint&gt;
+    &lt;joint name="right_wheel_joint" type="continuous"&gt; ... &lt;/joint&gt;
+  &lt;/robot&gt;
+
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Links:</span> Bodies</div>
+          <div class="info-chip"><span>Joints:</span> DOF constraints</div>
+          <div class="info-chip"><span>Frames:</span> TF tree nodes</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Differential Drive Geometry</h3>
+        <div class="eq-box">
+<span class="comment">// Kinematic parameters captured in URDF</span>
+
+Wheel radius:
+  <span class="highlight">r</span>  [m]
+
+Wheel separation (track width):
+  <span class="highlight">L</span>  [m]
+
+Kinematic relations:
+  v  = (r/2) (ω_r + ω_l)
+  ω  = (r/L) (ω_r - ω_l)
+
+URDF encodes:
+  - Wheel positions relative to base_link (±L/2).
+  - Wheel radii via &lt;collision&gt;/&lt;visual&gt; geometry.
+  - Joint axes (rotation about y or z, depending on convention).
+
+Control-layer differential-drive plugins or controllers use these parameters
+to map wheel angular speeds to base linear/angular velocity.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Param:</span> r – wheel radius</div>
+          <div class="info-chip"><span>Param:</span> L – track width</div>
+          <div class="info-chip"><span>Model:</span> Differential drive</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive Footprint Visualization</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual top view: base footprint vs wheel spacing</span>
+
+Adjust:
+ - Wheel radius r
+ - Track width L
+This shows an approximate top-down footprint to reason about stability and turning radius vs robot size.
+        </div>
+
+        <label>Wheel radius r (m)
+          <span class="val-display" id="r-val">0.05</span>
+        </label>
+        <input type="range" id="r-slider" min="0.02" max="0.20" step="0.01" value="0.05" oninput="updateFootprint()" />
+
+        <label>Track width L (m)
+          <span class="val-display" id="L-val">0.30</span>
+        </label>
+        <input type="range" id="L-slider" min="0.20" max="0.80" step="0.02" value="0.30" oninput="updateFootprint()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="footCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="foot-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>URDF Workflow (RViz)</h3>
+        <div class="eq-box">
+<span class="comment">// Typical Noetic URDF visualization pipeline</span>
+
+1. Create URDF/Xacro file (dd_robot.urdf or dd_robot.xacro).
+2. Use robot_state_publisher to publish TF from joint states:
+   &lt;node pkg="robot_state_publisher" type="robot_state_publisher" .../&gt;
+3. Optionally add joint_state_publisher_gui to manually move joints.
+4. Launch RViz, add:
+   - RobotModel (uses /robot_description)
+   - TF for frames.
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Minimal Differential Drive URDF</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Create a minimal URDF model with base_link and two wheel links.
+
+<span class="comment">// Steps</span>
+1. Define &lt;link name="base_link"&gt; with simple box geometry.
+2. Define &lt;link name="wheel_left"&gt;, &lt;link name="wheel_right"&gt; as cylinders.
+3. Add two continuous joints connecting wheels to base_link.
+4. Load into RViz using robot_state_publisher.
+5. Inspect TF tree and verify wheel positions.
+
+<span class="comment">// Observation</span>
+Confirm that wheel links rotate about the correct axis and are symmetric
+with respect to the robot centerline.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Add Inertial & Collision</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Augment the URDF with inertial and collision elements to prepare for Gazebo.
+
+<span class="comment">// Steps</span>
+1. Add &lt;inertial&gt; to base_link and wheels (mass, origin, inertia).
+2. Add &lt;collision&gt; geometry similar to &lt;visual&gt;.
+3. Reload URDF, ensure visual doesn’t change but physics info is present.
+4. (Optional) Launch in Gazebo in next practice using the same URDF.
+
+<span class="comment">// Discussion</span>
+Relate mass and inertia tensors to your mechanical models (m, J) and
+explain how they influence acceleration under torque in simulation.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Refactor to Xacro</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Convert the URDF to Xacro to avoid repetition and improve maintainability.
+
+<span class="comment">// Steps</span>
+1. Extract repeated wheel description into a &lt;xacro:macro&gt;.
+2. Introduce properties for wheel radius r, width, track L.
+3. Generate URDF:
+   rosrun xacro xacro dd_robot.xacro &gt; dd_robot.urdf
+4. Confirm that the visual result in RViz is unchanged.
+
+<span class="comment">// Conclusion</span>
+Xacro acts like a preprocessor.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>dd_robot.urdf – Minimal URDF</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>URDF</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;?xml version="1.0"?&gt;
+&lt;robot name="dd_robot"&gt;
+
+  &lt;link name="base_link"&gt;
+    &lt;inertial&gt;
+      &lt;origin xyz="0 0 0" rpy="0 0 0"/&gt;
+      &lt;mass value="5.0"/&gt;
+      &lt;inertia ixx="0.1" ixy="0.0" ixz="0.0"
+               iyy="0.1" iyz="0.0" izz="0.1"/&gt;
+    &lt;/inertial&gt;
+    &lt;visual&gt;
+      &lt;origin xyz="0 0 0.05" rpy="0 0 0"/&gt;
+      &lt;geometry&gt;
+        &lt;box size="0.4 0.3 0.1"/&gt;
+      &lt;/geometry&gt;
+      &lt;material name="blue"&gt;
+        &lt;color rgba="0.0 0.3 0.8 1.0"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    &lt;collision&gt;
+      &lt;origin xyz="0 0 0.05" rpy="0 0 0"/&gt;
+      &lt;geometry&gt;
+        &lt;box size="0.4 0.3 0.1"/&gt;
+      &lt;/geometry&gt;
+    &lt;/collision&gt;
+  &lt;/link&gt;
+
+  &lt;link name="wheel_left"&gt;
+    &lt;inertial&gt;
+      &lt;origin xyz="0 0 0" rpy="0 0 0"/&gt;
+      &lt;mass value="0.5"/&gt;
+      &lt;inertia ixx="0.01" ixy="0.0" ixz="0.0"
+               iyy="0.01" iyz="0.0" izz="0.01"/&gt;
+    &lt;/inertial&gt;
+    &lt;visual&gt;
+      &lt;origin xyz="0 0 0" rpy="0 1.5708 0"/&gt;
+      &lt;geometry&gt;
+        &lt;cylinder length="0.05" radius="0.05"/&gt;
+      &lt;/geometry&gt;
+      &lt;material name="black"&gt;
+        &lt;color rgba="0.02 0.02 0.02 1.0"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    &lt;collision&gt;
+      &lt;origin xyz="0 0 0" rpy="0 1.5708 0"/&gt;
+      &lt;geometry&gt;
+        &lt;cylinder length="0.05" radius="0.05"/&gt;
+      &lt;/geometry&gt;
+    &lt;/collision&gt;
+  &lt;/link&gt;
+
+  &lt;link name="wheel_right"&gt;
+    &lt;inertial&gt;
+      &lt;origin xyz="0 0 0" rpy="0 0 0"/&gt;
+      &lt;mass value="0.5"/&gt;
+      &lt;inertia ixx="0.01" ixy="0.0" ixz="0.0"
+               iyy="0.01" iyz="0.0" izz="0.01"/&gt;
+    &lt;/inertial&gt;
+    &lt;visual&gt;
+      &lt;origin xyz="0 0 0" rpy="0 1.5708 0"/&gt;
+      &lt;geometry&gt;
+        &lt;cylinder length="0.05" radius="0.05"/&gt;
+      &lt;/geometry&gt;
+      &lt;material name="black"/&gt;
+    &lt;/visual&gt;
+    &lt;collision&gt;
+      &lt;origin xyz="0 0 0" rpy="0 1.5708 0"/&gt;
+      &lt;geometry&gt;
+        &lt;cylinder length="0.05" radius="0.05"/&gt;
+      &lt;/geometry&gt;
+    &lt;/collision&gt;
+  &lt;/link&gt;
+
+  &lt;joint name="left_wheel_joint" type="continuous"&gt;
+    &lt;parent link="base_link"/&gt;
+    &lt;child  link="wheel_left"/&gt;
+    &lt;origin xyz="0 0.15 0.025" rpy="0 0 0"/&gt;
+    &lt;axis xyz="0 1 0"/&gt;
+  &lt;/joint&gt;
+
+  &lt;joint name="right_wheel_joint" type="continuous"&gt;
+    &lt;parent link="base_link"/&gt;
+    &lt;child  link="wheel_right"/&gt;
+    &lt;origin xyz="0 -0.15 0.025" rpy="0 0 0"/&gt;
+    &lt;axis xyz="0 1 0"/&gt;
+  &lt;/joint&gt;
+
+&lt;/robot&gt;
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>dd_robot.xacro – Parameterized Xacro</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Xacro</span>
+            <span class="lang-badge lang-xacro">Xacro</span>
+          </div>
+          <pre>
+&lt;?xml version="1.0"?&gt;
+&lt;robot xmlns:xacro="http://ros.org/wiki/xacro" name="dd_robot"&gt;
+
+  &lt;xacro:property name="base_length" value="0.4"/&gt;
+  &lt;xacro:property name="base_width"  value="0.3"/&gt;
+  &lt;xacro:property name="base_height" value="0.1"/&gt;
+  &lt;xacro:property name="wheel_radius" value="0.05"/&gt;
+  &lt;xacro:property name="wheel_width"  value="0.05"/&gt;
+  &lt;xacro:property name="track_width"  value="0.30"/&gt;
+
+  &lt;xacro:macro name="wheel_macro" params="name y_offset"&gt;
+    &lt;link name="${name}"&gt;
+      &lt;visual&gt;
+        &lt;origin xyz="0 0 0" rpy="0 1.5708 0"/&gt;
+        &lt;geometry&gt;
+          &lt;cylinder radius="${wheel_radius}" length="${wheel_width}"/&gt;
+        &lt;/geometry&gt;
+        &lt;material name="black"&gt;
+          &lt;color rgba="0.02 0.02 0.02 1.0"/&gt;
+        &lt;/material&gt;
+      &lt;/visual&gt;
+      &lt;collision&gt;
+        &lt;origin xyz="0 0 0" rpy="0 1.5708 0"/&gt;
+        &lt;geometry&gt;
+          &lt;cylinder radius="${wheel_radius}" length="${wheel_width}"/&gt;
+        &lt;/geometry&gt;
+      &lt;/collision&gt;
+    &lt;/link&gt;
+
+    &lt;joint name="${name}_joint" type="continuous"&gt;
+      &lt;parent link="base_link"/&gt;
+      &lt;child  link="${name}"/&gt;
+      &lt;origin xyz="0 ${y_offset} ${wheel_radius}" rpy="0 0 0"/&gt;
+      &lt;axis xyz="0 1 0"/&gt;
+    &lt;/joint&gt;
+  &lt;/xacro:macro&gt;
+
+  &lt;link name="base_link"&gt;
+    &lt;visual&gt;
+      &lt;origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/&gt;
+      &lt;geometry&gt;
+        &lt;box size="${base_length} ${base_width} ${base_height}"/&gt;
+      &lt;/geometry&gt;
+      &lt;material name="blue"&gt;
+        &lt;color rgba="0.0 0.3 0.8 1.0"/&gt;
+      &lt;/material&gt;
+    &lt;/visual&gt;
+    &lt;collision&gt;
+      &lt;origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/&gt;
+      &lt;geometry&gt;
+        &lt;box size="${base_length} ${base_width} ${base_height}"/&gt;
+      &lt;/geometry&gt;
+    &lt;/collision&gt;
+  &lt;/link&gt;
+
+  &lt;xacro:wheel_macro name="wheel_left"  y_offset="${ track_width/2 }"/&gt;
+  &lt;xacro:wheel_macro name="wheel_right" y_offset="-${ track_width/2 }"/&gt;
+
+&lt;/robot&gt;
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Launch – RViz Visualization</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Launch</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- launch_dd_robot_rviz.launch --&gt;
+&lt;launch&gt;
+  &lt;param name="robot_description"
+         command="$(find xacro)/xacro '$(find your_pkg)/urdf/dd_robot.xacro'" /&gt;
+
+  &lt;node pkg="robot_state_publisher"
+        type="robot_state_publisher"
+        name="robot_state_publisher"
+        output="screen"&gt;
+  &lt;/node&gt;
+
+  &lt;node pkg="joint_state_publisher_gui"
+        type="joint_state_publisher_gui"
+        name="joint_state_publisher_gui"
+        output="screen" /&gt;
+
+  &lt;node pkg="rviz"
+        type="rviz"
+        name="rviz"
+        args="-d $(find your_pkg)/rviz/dd_robot.rviz" /&gt;
+&lt;/launch&gt;
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>CLI Summary</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic CLI</span>
+            <span class="lang-badge lang-xml">Shell</span>
+          </div>
+          <pre>
+<span class="cmt"># Generate URDF from Xacro</span>
+rosrun xacro xacro \
+  $(rospack find your_pkg)/urdf/dd_robot.xacro \
+  &gt; /tmp/dd_robot.urdf
+
+<span class="cmt"># Check URDF</span>
+check_urdf /tmp/dd_robot.urdf
+
+<span class="cmt"># View TF tree</span>
+rosrun tf view_frames
+
+<span class="cmt"># Launch with RViz</span>
+roslaunch your_pkg launch_dd_robot_rviz.launch
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) Differentiate between &lt;link&gt; and &lt;joint&gt; in URDF.
+2) What physical information is stored in &lt;inertial&gt; and why is it important for simulation?
+3) How do wheel radius r and track width L influence the differential drive kinematics?
+4) Why is Xacro used instead of plain URDF in larger robot descriptions?
+5) How does the URDF relate to the TF tree?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Add a caster wheel link and joint to improve stability and compare the TF tree with and without the caster.
+
+2) Attach a simple LIDAR link with a sensor frame on top of base_link, to be used later in LIDAR and mapping experiments.
+
+3) Parameterize mass and inertia via Xacro properties and study how changing them affects acceleration when torques are applied in Gazebo.
+
+4) Prepare a Gazebo-ready URDF by adding appropriate plugins for differential drive and sensors as a bridge to the next practice.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updateFootprint() {
+      const r = parseFloat(document.getElementById('r-slider').value);
+      const L = parseFloat(document.getElementById('L-slider').value);
+      document.getElementById('r-val').textContent = r.toFixed(2);
+      document.getElementById('L-val').textContent = L.toFixed(2);
+      drawFootprint('footCanvas', r, L);
+    }
+
+    function drawFootprint(canvasId, r, L) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 20, t: 20, b: 30 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      const maxL = 0.8;
+      const baseLen = 0.4;
+      const baseWid = Math.min(L * 0.6, 0.6);
+
+      function sx(xm) { return pad.l + (xm / maxL) * pw; }
+      function sy(ym) { return pad.t + ph / 2 - ym * (ph / maxL); }
+
+      const halfLen = baseLen / 2;
+      const halfWid = baseWid / 2;
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+      ctx.fillStyle = '#1f2335';
+      ctx.beginPath();
+      ctx.moveTo(sx(-halfLen), sy(-halfWid));
+      ctx.lineTo(sx( halfLen), sy(-halfWid));
+      ctx.lineTo(sx( halfLen), sy( halfWid));
+      ctx.lineTo(sx(-halfLen), sy( halfWid));
+      ctx.closePath();
+      ctx.fill();
+
+      const wheelOffset = L / 2;
+
+      ctx.fillStyle = '#4f8ef7';
+      ctx.beginPath();
+      ctx.ellipse(sx(0), sy(wheelOffset), r * (pw / maxL), r * (ph / maxL), 0, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.ellipse(sx(0), sy(-wheelOffset), r * (pw / maxL), r * (ph / maxL), 0, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Top view footprint (not to scale)', pad.l, pad.t + ph + 18);
+
+      const infoDiv = document.getElementById('foot-info');
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>r:</span> ' + r.toFixed(2) + ' m</div>' +
+        '<div class="info-chip"><span>L:</span> ' + L.toFixed(2) + ' m</div>' +
+        '<div class="info-chip"><span>Aspect:</span> ' + (L / (2 * r)).toFixed(1) + ' (track / wheel diameter)</div>';
+    }
+
+    window.addEventListener('load', () => {
+      updateFootprint();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 8 – ROS + OpenCV Camera Processing</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .content { padding: 28px 32px; display: none; }
+    .content.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .eq-box .comment { color: #6a737d; }
+    .eq-box .highlight { color: var(--accent); font-weight: bold; }
+    .eq-box .highlight2 { color: var(--accent2); font-weight: bold; }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .info-chip span { color: var(--text); font-weight: 600; }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .lang-py {
+      background: #3572a522;
+      color: #4d9fdb;
+      border: 1px solid #3572a544;
+    }
+    .lang-xml {
+      background: #e44c1c22;
+      color: #e44c1c;
+      border: 1px solid #e44c1c44;
+    }
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 8</span>
+        <h1>ROS + OpenCV Camera Processing (Noetic)</h1>
+      </div>
+      <p>ROS Noetic • cv_bridge • usb_cam • Image Transport • Basic Vision</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('theory')">ROS + OpenCV</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">Python Nodes</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- THEORY TAB -->
+  <div id="tab-theory" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Image Transport in ROS</h3>
+        <div class="eq-box">
+<span class="comment">// Camera data flow</span>
+
+Camera drivers (e.g., usb_cam) publish:
+  <span class="highlight">sensor_msgs/Image</span> on /camera/image_raw
+  <span class="highlight">sensor_msgs/CameraInfo</span> on /camera/camera_info
+
+Key fields:
+  - encoding (e.g., "bgr8", "mono8")
+  - width, height, step
+  - data (pixel buffer)
+
+cv_bridge converts between ROS Image and OpenCV cv::Mat / numpy arrays:
+  img_cv = bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+  msg_ros = bridge.cv2_to_imgmsg(img_cv, encoding="bgr8")
+
+This lets your vision algorithms run as normal OpenCV code inside ROS nodes.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Image:</span> sensor_msgs/Image</div>
+          <div class="info-chip"><span>Bridge:</span> cv_bridge</div>
+          <div class="info-chip"><span>Driver:</span> usb_cam</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>cv_bridge & OpenCV Pipeline</h3>
+        <div class="eq-box">
+<span class="comment">// Typical processing node structure (Python)</span>
+
+1) Subscribe to /camera/image_raw (sensor_msgs/Image).
+2) In callback:
+   - Convert ROS → OpenCV using CvBridge.
+   - Apply OpenCV operations (gray, blur, edges, contours, etc.).
+   - Optionally convert back and publish processed image.
+
+Example structure:
+  bridge = CvBridge()
+
+  def callback(msg):
+      cv_image = bridge.imgmsg_to_cv2(msg, "bgr8")
+      processed = cv2.Canny(cv_image, low, high)
+      out_msg  = bridge.cv2_to_imgmsg(processed, encoding="mono8")
+      pub.publish(out_msg)
+
+This mirrors your control-lab pipeline: measurement → processing block →
+output, but here on pixel arrays.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Subscribe:</span> /camera/image_raw</div>
+          <div class="info-chip"><span>Process:</span> OpenCV</div>
+          <div class="info-chip"><span>Publish:</span> /image_processed</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive Edge Threshold Sketch</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual effect of Canny thresholds</span>
+
+Adjust:
+ - Low threshold
+ - High threshold
+to see a qualitative “edge density” bar, representing how many edges you
+might detect at those values.
+        </div>
+
+        <label>Low threshold
+          <span class="val-display" id="low-val">50</span>
+        </label>
+        <input type="range" id="low-slider" min="0" max="150" step="5" value="50" oninput="updateEdges()" />
+
+        <label>High threshold
+          <span class="val-display" id="high-val">100</span>
+        </label>
+        <input type="range" id="high-slider" min="50" max="250" step="5" value="100" oninput="updateEdges()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="edgeCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="edge-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>Typical Camera Setup</h3>
+        <div class="eq-box">
+<span class="comment">// From usb_cam and cv_bridge tutorials</span>
+
+1) Start camera driver:
+   rosrun usb_cam usb_cam_node
+   - Publishes /usb_cam/image_raw (or /camera/image_raw)
+
+2) Check stream:
+   rosrun rqt_image_view rqt_image_view
+   - Select /usb_cam/image_raw
+
+3) Run your processing node subscribing to that topic and re-publishing
+   processed images on /image_processed.
+
+4) In rqt_image_view, compare raw vs processed streams in separate panels.
+
+This mimics having “raw sensor” and “filtered signal” in signal-processing labs.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Basic Camera Viewer Node</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Subscribe to /camera/image_raw and display it using OpenCV imshow.
+
+<span class="comment">// Steps</span>
+1. Run:
+   rosrun usb_cam usb_cam_node
+2. Write image_viewer.py:
+   - Subscribe to /usb_cam/image_raw
+   - Convert with CvBridge
+   - cv2.imshow("camera", frame)
+   - cv2.waitKey(1)
+3. Verify real-time video in an OpenCV window.
+4. Compare with rqt_image_view output.
+
+<span class="comment">// Observation</span>
+Note latency and CPU usage vs resolution and frame rate.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Real-Time Edge Detection</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Process camera frames with Canny edges and publish /image_edges.
+
+<span class="comment">// Steps</span>
+1. Node subscribes to /usb_cam/image_raw.
+2. Convert to grayscale, apply Gaussian blur.
+3. Apply cv2.Canny with tunable thresholds.
+4. Publish result as mono8 Image on /image_edges.
+5. In rqt_image_view, place raw and edge streams side-by-side.
+
+<span class="comment">// Discussion</span>
+Relate threshold tuning to noise vs detail trade-off, analogous to filter
+cut-off choice in analog/digital filtering.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Color-Based Object Highlighting</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Highlight objects of a given color (e.g., red marker) in the scene.
+
+<span class="comment">// Steps</span>
+1. Convert BGR → HSV.
+2. Threshold HSV ranges (lower/upper) for target color.
+3. Apply morphological operations (erode/dilate) to clean mask.
+4. Use cv2.bitwise_and to keep only colored regions in output.
+5. Publish /image_color_mask and visualize.
+
+<span class="comment">// Analysis</span>
+Discuss sensitivity to lighting, shadows, and camera auto-exposure, linking
+to robustness issues in real deployments.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>image_viewer.py – Simple Subscriber</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS + OpenCV</span>
+            <span class="lang-badge lang-py">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">from</span> sensor_msgs.msg <span class="kw">import</span> Image
+<span class="kw">from</span> cv_bridge <span class="kw">import</span> CvBridge
+<span class="kw">import</span> cv2
+
+<span class="var">bridge</span> = CvBridge()
+
+<span class="kw">def</span> <span class="fn">callback</span>(msg):
+    rospy.loginfo_once(<span class="str">"Receiving video frames..."</span>)
+    <span class="kw">try</span>:
+        frame = bridge.imgmsg_to_cv2(msg, desired_encoding=<span class="str">"bgr8"</span>)
+    <span class="kw">except</span> Exception <span class="kw">as</span> e:
+        rospy.logerr(<span class="str">"cv_bridge error: %s"</span>, e)
+        <span class="kw">return</span>
+
+    cv2.imshow(<span class="str">"camera"</span>, frame)
+    cv2.waitKey(<span class="num">1</span>)
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    rospy.init_node(<span class="str">"image_viewer"</span>)
+    rospy.Subscriber(<span class="str">"/usb_cam/image_raw"</span>, Image, callback)
+    rospy.loginfo(<span class="str">"image_viewer node started"</span>)
+    rospy.spin()
+    cv2.destroyAllWindows()
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    main()
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>edge_detector.py – Canny + Publisher</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS + OpenCV</span>
+            <span class="lang-badge lang-py">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">from</span> sensor_msgs.msg <span class="kw">import</span> Image
+<span class="kw">from</span> cv_bridge <span class="kw">import</span> CvBridge
+<span class="kw">import</span> cv2
+
+<span class="var">bridge</span> = CvBridge()
+<span class="var">pub_edges</span> = <span class="kw">None</span>
+
+<span class="kw">def</span> <span class="fn">callback</span>(msg):
+    <span class="kw">global</span> pub_edges
+    <span class="kw">try</span>:
+        frame = bridge.imgmsg_to_cv2(msg, desired_encoding=<span class="str">"bgr8"</span>)
+    <span class="kw">except</span> Exception <span class="kw">as</span> e:
+        rospy.logerr(<span class="str">"cv_bridge error: %s"</span>, e)
+        <span class="kw">return</span>
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (<span class="num">5</span>, <span class="num">5</span>), <span class="num">1.0</span>)
+
+    low  = rospy.get_param(<span class="str">"~canny_low"</span>,  <span class="num">50</span>)
+    high = rospy.get_param(<span class="str">"~canny_high"</span>, <span class="num">100</span>)
+
+    edges = cv2.Canny(blur, low, high)
+
+    out_msg = bridge.cv2_to_imgmsg(edges, encoding=<span class="str">"mono8"</span>)
+    out_msg.header = msg.header
+    pub_edges.publish(out_msg)
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    <span class="kw">global</span> pub_edges
+    rospy.init_node(<span class="str">"edge_detector"</span>)
+    pub_edges = rospy.Publisher(<span class="str">"/image_edges"</span>, Image, queue_size=<span class="num">1</span>)
+    rospy.Subscriber(<span class="str">"/usb_cam/image_raw"</span>, Image, callback)
+    rospy.loginfo(<span class="str">"edge_detector node started"</span>)
+    rospy.spin()
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    main()
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>color_highlight.py – HSV Masking</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS + OpenCV</span>
+            <span class="lang-badge lang-py">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">from</span> sensor_msgs.msg <span class="kw">import</span> Image
+<span class="kw">from</span> cv_bridge <span class="kw">import</span> CvBridge
+<span class="kw">import</span> cv2
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="var">bridge</span> = CvBridge()
+<span class="var">pub_color</span> = <span class="kw">None</span>
+
+<span class="kw">def</span> <span class="fn">callback</span>(msg):
+    <span class="kw">global</span> pub_color
+    <span class="kw">try</span>:
+        frame = bridge.imgmsg_to_cv2(msg, desired_encoding=<span class="str">"bgr8"</span>)
+    <span class="kw">except</span> Exception <span class="kw">as</span> e:
+        rospy.logerr(<span class="str">"cv_bridge error: %s"</span>, e)
+        <span class="kw">return</span>
+
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    lower = np.array(rospy.get_param(<span class="str">"~lower_hsv"</span>, [<span class="num">0</span>, <span class="num">120</span>, <span class="num">70</span>]), dtype=np.uint8)
+    upper = np.array(rospy.get_param(<span class="str">"~upper_hsv"</span>, [<span class="num">10</span>, <span class="num">255</span>, <span class="num">255</span>]), dtype=np.uint8)
+
+    mask = cv2.inRange(hsv, lower, upper)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((<span class="num">3</span>, <span class="num">3</span>), np.uint8))
+
+    result = cv2.bitwise_and(frame, frame, mask=mask)
+
+    out_msg = bridge.cv2_to_imgmsg(result, encoding=<span class="str">"bgr8"</span>)
+    out_msg.header = msg.header
+    pub_color.publish(out_msg)
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    <span class="kw">global</span> pub_color
+    rospy.init_node(<span class="str">"color_highlight"</span>)
+    pub_color = rospy.Publisher(<span class="str">"/image_color_highlight"</span>, Image, queue_size=<span class="num">1</span>)
+    rospy.Subscriber(<span class="str">"/usb_cam/image_raw"</span>, Image, callback)
+    rospy.loginfo(<span class="str">"color_highlight node started"</span>)
+    rospy.spin()
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    main()
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>Example Launch – Camera + Processing</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Launch</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- launch_camera_processing.launch --&gt;
+&lt;launch&gt;
+  &lt;node pkg="usb_cam" type="usb_cam_node" name="usb_cam"&gt;
+    &lt;param name="video_device" value="/dev/video0"/&gt;
+    &lt;param name="image_width"  value="640"/&gt;
+    &lt;param name="image_height" value="480"/&gt;
+    &lt;param name="framerate"    value="30"/&gt;
+    &lt;param name="pixel_format" value="mjpeg"/&gt;
+  &lt;/node&gt;  &lt;!-- publishes /usb_cam/image_raw --&gt;
+
+  &lt;node pkg="your_pkg" type="edge_detector.py" name="edge_detector" output="screen"&gt;
+    &lt;param name="canny_low"  value="50"/&gt;
+    &lt;param name="canny_high" value="100"/&gt;
+  &lt;/node&gt;
+
+  &lt;node pkg="your_pkg" type="color_highlight.py" name="color_highlight" output="screen"&gt;
+    &lt;param name="lower_hsv" value="[0, 120, 70]"/&gt;
+    &lt;param name="upper_hsv" value="[10, 255, 255]"/&gt;
+  &lt;/node&gt;
+&lt;/launch&gt;
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) What is the role of cv_bridge in a ROS + OpenCV pipeline?
+2) Why do we specify an encoding (e.g., "bgr8", "mono8") when converting images?
+3) How do Canny thresholds affect detected edges and noise sensitivity?
+4) What are the advantages of working in HSV vs RGB for color segmentation?
+5) Compare rqt_image_view vs a custom OpenCV viewer node in terms of flexibility and overhead.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Implement a basic motion detector using frame differencing and thresholding to flag moving objects in the camera FOV.
+
+2) Use ArUco markers or AprilTags (via existing ROS packages) to estimate camera pose and relate it to TF frames.
+
+3) Train a simple classifier (e.g., SVM or lightweight CNN) offline and deploy it in a ROS node that labels objects in frames.
+
+4) Combine this practice with TurtleBot3 navigation: use the camera stream to detect colored landmarks and adapt navigation behavior (slow down, stop, or change goal).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updateEdges() {
+      const low  = parseFloat(document.getElementById('low-slider').value);
+      const high = parseFloat(document.getElementById('high-slider').value);
+      document.getElementById('low-val').textContent  = low.toFixed(0);
+      document.getElementById('high-val').textContent = high.toFixed(0);
+
+      const density = Math.max(0, (high - low)) / 200.0;
+      drawEdgeBar('edgeCanvas', density, low, high);
+
+      let level = 'Sparse';
+      if (density > 0.4 && density <= 0.8) level = 'Moderate';
+      else if (density > 0.8) level = 'Dense';
+
+      const infoDiv = document.getElementById('edge-info');
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>Low:</span> ' + low.toFixed(0) + '</div>' +
+        '<div class="info-chip"><span>High:</span> ' + high.toFixed(0) + '</div>' +
+        '<div class="info-chip"><span>Edge density:</span> ' + level + '</div>';
+    }
+
+    function drawEdgeBar(canvasId, density, low, high) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 20, t: 20, b: 30 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      const norm = Math.min(1.0, Math.max(0.0, density));
+      const barWidth = pw * norm;
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+      const grad = ctx.createLinearGradient(pad.l, pad.t, pad.l + pw, pad.t);
+      grad.addColorStop(0, '#4fcc7a');
+      grad.addColorStop(0.6, '#f7d14f');
+      grad.addColorStop(1, '#f74f4f');
+      ctx.fillStyle = grad;
+      ctx.fillRect(pad.l, pad.t, barWidth, ph);
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Qualitative edge density vs thresholds', pad.l, pad.t + ph + 18);
+      ctx.fillText('low=' + low.toFixed(0) + ', high=' + high.toFixed(0), pad.l + 4, pad.t + ph / 2 + 4);
+    }
+
+    window.addEventListener('load', () => {
+      updateEdges();
+    });
+  </script>
+</body>
+</html>

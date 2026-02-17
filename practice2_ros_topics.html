@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 2 – ROS Topics: Publisher–Subscriber Modeling</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 2px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--text);
+    }
+
+    .content {
+      padding: 28px 32px;
+      display: none;
+    }
+
+    .content.active {
+      display: block;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+
+    .eq-box .comment {
+      color: #6a737d;
+    }
+
+    .eq-box .highlight {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .eq-box .highlight2 {
+      color: var(--accent2);
+      font-weight: bold;
+    }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .info-chip span {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .lang-python {
+      background: #3572a522;
+      color: #4d9fdb;
+      border: 1px solid #3572a544;
+    }
+
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    .slider-row {
+      margin-top: 10px;
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2,
+      .grid3 {
+        grid-template-columns: 1fr;
+      }
+      header {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 2</span>
+        <h1>ROS Topics – Publisher–Subscriber Modeling</h1>
+      </div>
+      <p>ROS Noetic • Nodes • Topics • Data Flow</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('theory')">Topics & Node Graph</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">Python Code</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- THEORY TAB -->
+  <div id="tab-theory" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>ROS Topic Model</h3>
+        <div class="eq-box">
+<span class="comment">// ROS Noetic Topic Abstraction</span>
+
+<span class="highlight">Node</span>  = process that performs computation
+<span class="highlight">Topic</span> = named bus over which nodes exchange messages
+<span class="highlight">Message</span> = strongly-typed data structure
+
+Examples (TurtleSim):
+  <span class="highlight2">/turtle1/cmd_vel</span> : geometry_msgs/Twist   (velocity commands)
+  <span class="highlight2">/turtle1/pose</span>    : turtlesim/Pose        (x, y, θ, v, ω)
+
+<span class="comment">// Conceptual I/O mapping</span>
+Publisher Node   --->  Topic  --->  Subscriber Node
+u(t)             --->  y(t)
+
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Node:</span> ROS process</div>
+          <div class="info-chip"><span>Topic:</span> Named data stream</div>
+          <div class="info-chip"><span>Message:</span> Typed data packet</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Publisher–Subscriber Flow</h3>
+        <div class="eq-box">
+<span class="comment">// Example: /chatter string topic</span>
+
+<span class="highlight">talker.py</span>  → publishes std_msgs/String on /chatter
+<span class="highlight">listener.py</span> → subscribes to /chatter and prints data
+
+Node Graph (simplified):
+
+  [talker]  --(std_msgs/String)-->  [/chatter]  --(std_msgs/String)-->  [listener]
+
+You can inspect this structure with:
+
+  <span class="highlight">rqt_graph</span>
+  <span class="highlight">rostopic list</span>
+  <span class="highlight">rostopic info /chatter</span>
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Rate:</span> Publication frequency (Hz)</div>
+          <div class="info-chip"><span>Queue size:</span> Subscriber buffer</div>
+          <div class="info-chip"><span>ROS Master:</span> Name service & registration</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive Topic Flow Visualization</h3>
+        <div class="eq-box">
+<span class="comment">// Simple conceptual visualization</span>
+
+Use the sliders to adjust:
+ - Publication rate (Hz)
+ - Message size (bytes)
+Then observe the indicative bandwidth bar below. This is a conceptual tool,
+not a substitute for <span class="highlight">rostopic hz</span> or <span class="highlight">rostopic bw</span> in a real ROS system.
+        </div>
+
+        <div class="slider-row">
+          <label>Publish Rate (Hz)
+            <span class="val-display" id="rate-val">10</span>
+          </label>
+          <input type="range" id="rate-slider" min="1" max="100" value="10" oninput="updateBandwidth()" />
+        </div>
+
+        <div class="slider-row">
+          <label>Message Size (bytes)
+            <span class="val-display" id="size-val">32</span>
+          </label>
+          <input type="range" id="size-slider" min="8" max="512" value="32" oninput="updateBandwidth()" />
+        </div>
+
+        <div style="margin-top:14px;">
+          <canvas id="bwCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="bw-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>CLI Tools (Quick Reference)</h3>
+        <div class="eq-box">
+<span class="comment">// Turtlesim + topics quick demo</span>
+
+roscore
+rosrun turtlesim turtlesim_node
+rosrun turtlesim turtle_teleop_key
+
+<span class="comment">// Inspect topics</span>
+rostopic list
+rostopic echo /turtle1/pose
+rostopic info /turtle1/cmd_vel
+
+<span class="comment">// Publish a test command</span>
+rostopic pub /turtle1/cmd_vel geometry_msgs/Twist \
+  "{linear: {x: 1.0}, angular: {z: 0.5}}" -r 5
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Basic String Topic</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Create a simple publisher and subscriber using std_msgs/String on /chatter
+to learn basic topic communication.
+
+<span class="comment">// Steps</span>
+1. rosrun your_pkg talker.py
+2. rosrun your_pkg listener.py
+3. Observe messages printed in the listener terminal.
+4. Use: <span class="highlight">rostopic hz /chatter</span> to measure rate.
+
+<span class="comment">// Observation</span>
+Note how publication rate and queue size influence the perceived delay.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Numeric Signal Topic</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Publish a numeric signal (e.g., sine wave) on a Float64 topic and log it.
+
+<span class="comment">// Steps</span>
+1. Publisher: publishes sin(2πft) as std_msgs/Float64 on /signal.
+2. Subscriber: logs values to a CSV file.
+3. Post-process in Python/Matplotlib to plot amplitude vs time.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Topic Remapping</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Use topic remapping in a launch file without changing source code.
+
+<span class="comment">// Steps</span>
+1. Launch talker → publishes on /chatter.
+2. Use launch file to remap /chatter → /my_topic.
+3. Start listener subscribing to /my_topic.
+4. Verify communication with rostopic list/info.
+
+<span class="comment">// Conclusion</span>
+Remapping lets you reuse nodes as generic blocks and rewire experiments easily.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>talker.py – String Publisher</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic Python</span>
+            <span class="lang-badge lang-python">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">from</span> std_msgs.msg <span class="kw">import</span> String
+
+<span class="kw">def</span> <span class="fn">talker</span>():
+    pub = rospy.Publisher(<span class="str">'/chatter'</span>, String, queue_size=<span class="num">10</span>)
+    rospy.init_node(<span class="str">'talker'</span>, anonymous=<span class="kw">True</span>)
+    rate = rospy.Rate(<span class="num">10</span>)  <span class="cmt"># 10 Hz</span>
+    count = <span class="num">0</span>
+
+    <span class="kw">while</span> <span class="kw">not</span> rospy.is_shutdown():
+        msg = String()
+        msg.data = f<span class="str">"Hello ROS Noetic #{count}"</span>
+        pub.publish(msg)
+        rate.sleep()
+        count += <span class="num">1</span>
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    <span class="kw">try</span>:
+        talker()
+    <span class="kw">except</span> rospy.ROSInterruptException:
+        <span class="kw">pass</span>
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>listener.py – String Subscriber</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic Python</span>
+            <span class="lang-badge lang-python">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">from</span> std_msgs.msg <span class="kw">import</span> String
+
+<span class="kw">def</span> <span class="fn">callback</span>(msg: String):
+    rospy.loginfo(<span class="str">"I heard: %s"</span>, msg.data)
+
+<span class="kw">def</span> <span class="fn">listener</span>():
+    rospy.init_node(<span class="str">'listener'</span>, anonymous=<span class="kw">True</span>)
+    rospy.Subscriber(<span class="str">'/chatter'</span>, String, callback)
+    rospy.spin()
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    listener()
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>signal_publisher.py – Numeric Topic</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic Python</span>
+            <span class="lang-badge lang-python">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">import</span> math
+<span class="kw">from</span> std_msgs.msg <span class="kw">import</span> Float64
+
+<span class="kw">def</span> <span class="fn">signal_pub</span>():
+    pub = rospy.Publisher(<span class="str">'/signal'</span>, Float64, queue_size=<span class="num">10</span>)
+    rospy.init_node(<span class="str">'signal_publisher'</span>)
+    rate_hz = rospy.get_param(<span class="str">'~rate'</span>, <span class="num">50.0</span>)
+    freq = rospy.get_param(<span class="str">'~freq'</span>, <span class="num">1.0</span>)  <span class="cmt"># Hz</span>
+    rate = rospy.Rate(rate_hz)
+    t0 = rospy.Time.now().to_sec()
+
+    <span class="kw">while</span> <span class="kw">not</span> rospy.is_shutdown():
+        t = rospy.Time.now().to_sec() - t0
+        y = math.sin(<span class="num">2.0</span> * math.pi * freq * t)
+        pub.publish(Float64(y))
+        rate.sleep()
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    signal_pub()
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>Minimal Launch – Remapping</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Launch</span>
+            <span class="lang-badge lang-python">XML</span>
+          </div>
+          <pre>
+<span class="cmt">&lt;!-- launch_remap_chatter.launch --&gt;</span>
+&lt;launch&gt;
+  &lt;node pkg=<span class="str">"your_pkg"</span> type=<span class="str">"talker.py"</span> name=<span class="str">"talker"</span> output=<span class="str">"screen"</span>&gt;
+    &lt;remap from=<span class="str">"/chatter"</span> to=<span class="str">"/my_topic"</span> /&gt;
+  &lt;/node&gt;
+
+  &lt;node pkg=<span class="str">"your_pkg"</span> type=<span class="str">"listener.py"</span> name=<span class="str">"listener"</span> output=<span class="str">"screen"</span>&gt;
+    &lt;remap from=<span class="str">"/chatter"</span> to=<span class="str">"/my_topic"</span> /&gt;
+  &lt;/node&gt;
+&lt;/launch&gt;
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual questions</span>
+
+1) What is a ROS topic and how does it differ from a service?
+2) What is the role of the ROS Master in topic communication?
+3) How do rate and queue_size influence message delivery and latency?
+4) In the TurtleSim example, what information is carried on /turtle1/pose and /turtle1/cmd_vel?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Build a 3-node chain:
+   Source node → Filter node → Logger node
+   (e.g., absolute value, low-pass filter).
+
+2) Replace the string topic with geometry_msgs/Twist and control TurtleSim via your own node instead of teleop_turtle.
+
+3) Record /chatter or /signal using rosbag and replay it while visualizing the data in Python.
+
+4) Use rqt_graph to capture screenshots of node graphs and paste them into your report as evidence of correct ROS wiring.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updateBandwidth() {
+      const rate = parseFloat(document.getElementById('rate-slider').value);
+      const size = parseFloat(document.getElementById('size-slider').value);
+      document.getElementById('rate-val').textContent = rate.toFixed(0);
+      document.getElementById('size-val').textContent = size.toFixed(0);
+
+      const bw = rate * size; // bytes/s (conceptual)
+      drawBandwidthBar('bwCanvas', bw, rate, size);
+
+      const infoDiv = document.getElementById('bw-info');
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>Rate:</span> ' + rate.toFixed(0) + ' Hz</div>' +
+        '<div class="info-chip"><span>Size:</span> ' + size.toFixed(0) + ' bytes</div>' +
+        '<div class="info-chip"><span>BW:</span> ' + bw.toFixed(0) + ' bytes/s</div>';
+    }
+
+    function drawBandwidthBar(canvasId, bw, rate, size) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 20, t: 20, b: 35 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      const maxBw = 50000; // arbitrary scale
+      const norm = Math.min(1.0, bw / maxBw);
+      const barWidth = pw * norm;
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+      const grad = ctx.createLinearGradient(pad.l, pad.t, pad.l + pw, pad.t);
+      grad.addColorStop(0, '#4fcc7a');
+      grad.addColorStop(1, '#f7914f');
+      ctx.fillStyle = grad;
+      ctx.fillRect(pad.l, pad.t, barWidth, ph);
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Estimated topic bandwidth (bytes/s, conceptual)', pad.l, pad.t + ph + 18);
+      ctx.fillText(bw.toFixed(0) + ' bytes/s', pad.l + 4, pad.t + ph / 2 + 4);
+    }
+
+    window.addEventListener('load', () => {
+      updateBandwidth();
+    });
+  </script>
+</body>
+</html>

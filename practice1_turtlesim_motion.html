@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 1 – TurtleSim Motion Modeling & Control</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 2px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--text);
+    }
+
+    .content {
+      padding: 28px 32px;
+      display: none;
+    }
+
+    .content.active {
+      display: block;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+
+    .eq-box .comment {
+      color: #6a737d;
+    }
+
+    .eq-box .highlight {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .eq-box .highlight2 {
+      color: var(--accent2);
+      font-weight: bold;
+    }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .info-chip span {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .lang-python {
+      background: #3572a522;
+      color: #4d9fdb;
+      border: 1px solid #3572a544;
+    }
+
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2,
+      .grid3 {
+        grid-template-columns: 1fr;
+      }
+      header {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 1</span>
+        <h1>TurtleSim Motion Modeling & Control</h1>
+      </div>
+      <p>ROS Noetic • Unicycle Kinematics • Topics • Velocity Commands</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('model')">Kinematic Model</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">Python Code</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- MODEL TAB -->
+  <div id="tab-model" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Unicycle Kinematic Model</h3>
+        <div class="eq-box">
+<span class="comment">// Single TurtleSim robot – planar motion model</span>
+
+State:
+  x(t)  : position in X
+  y(t)  : position in Y
+  θ(t)  : heading angle (rad)
+
+Control inputs (from /turtle1/cmd_vel):
+  v(t)  : linear velocity (m/s)
+  ω(t)  : angular velocity (rad/s)
+
+<span class="highlight">Continuous-time model</span>
+  ẋ = v cos θ
+  ẏ = v sin θ
+  θ̇ = ω
+
+With constant v, ω over a small Δt you can integrate:
+  xₖ₊₁ = xₖ + v cos θₖ · Δt
+  yₖ₊₁ = yₖ + v sin θₖ · Δt
+  θₖ₊₁ = θₖ + ω · Δt
+
+This is the kinematic base behind TurtleSim motion when you publish:
+geometry_msgs/Twist on /turtle1/cmd_vel.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>State:</span> (x, y, θ)</div>
+          <div class="info-chip"><span>Inputs:</span> v, ω</div>
+          <div class="info-chip"><span>Model:</span> Unicycle (planar)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>ROS Abstraction – Topics & Pose</h3>
+        <div class="eq-box">
+<span class="comment">// Core TurtleSim topics</span>
+
+  /turtle1/cmd_vel  : geometry_msgs/Twist  (input command)
+  /turtle1/pose     : turtlesim/Pose       (x, y, θ, linear, angular)
+
+Typical graph:
+  [turtle_teleop_key] --(Twist)--> /turtle1/cmd_vel --> [turtlesim_node]
+  [turtlesim_node]   --(Pose) ---> /turtle1/pose     --> [your controller]
+
+You can inspect with:
+  rqt_graph
+  rostopic list
+  rostopic info /turtle1/cmd_vel
+  rostopic echo /turtle1/pose
+
+Analogy to control systems:
+  - /turtle1/cmd_vel ≈ input u(t)
+  - /turtle1/pose    ≈ output/state y(t)
+  - turtlesim_node   ≈ plant / process.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Input topic:</span> /turtle1/cmd_vel</div>
+          <div class="info-chip"><span>Output topic:</span> /turtle1/pose</div>
+          <div class="info-chip"><span>Node:</span> turtlesim_node</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive Path Visualization</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual path for constant v, ω</span>
+
+For constant v, ω ≠ 0:
+  Radius R = v / |ω|
+  The turtle follows a circular arc of radius R.
+
+For ω = 0:
+  Straight line with slope θ₀.
+
+Use the sliders to choose v, ω and duration, then see the idealized path.
+This mimics what happens when you hold a key in turtle_teleop_key or
+publish constant Twist commands from a node.
+        </div>
+
+        <label>Linear velocity v (m/s)
+          <span class="val-display" id="v-val">1.0</span>
+        </label>
+        <input type="range" id="v-slider" min="0" max="2" step="0.1" value="1.0" oninput="updatePath()" />
+
+        <label>Angular velocity ω (rad/s)
+          <span class="val-display" id="w-val">0.5</span>
+        </label>
+        <input type="range" id="w-slider" min="-2" max="2" step="0.1" value="0.5" oninput="updatePath()" />
+
+        <label>Duration T (s)
+          <span class="val-display" id="T-val">10</span>
+        </label>
+        <input type="range" id="T-slider" min="2" max="30" step="1" value="10" oninput="updatePath()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="pathCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="path-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>Quick TurtleSim Commands</h3>
+        <div class="eq-box">
+<span class="comment">// Install (once)</span>
+sudo apt-get install ros-noetic-turtlesim
+
+<span class="comment">// Run core + TurtleSim</span>
+roscore
+rosrun turtlesim turtlesim_node
+
+<span class="comment">// Keyboard control</span>
+rosrun turtlesim turtle_teleop_key
+
+<span class="comment">// Inspect topics</span>
+rostopic list
+rostopic echo /turtle1/pose
+rostopic type /turtle1/cmd_vel
+
+<span class="comment">// Publish a circular command</span>
+rostopic pub -r 1 /turtle1/cmd_vel geometry_msgs/Twist \
+  "{linear: {x: 1.0}, angular: {z: 1.0}}"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Straight Line Motion</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Move the turtle in an approximately straight line using constant v, ω = 0.
+
+<span class="comment">// Steps</span>
+1. Start roscore and turtlesim_node.
+2. Use turtle_teleop_key: press UP arrow with minimal steering.
+3. Alternatively, publish:
+   rostopic pub -r 5 /turtle1/cmd_vel geometry_msgs/Twist \
+     "{linear: {x: 1.0}, angular: {z: 0.0}}"
+4. Observe the trajectory and final pose from /turtle1/pose.
+
+<span class="comment">// Analysis</span>
+Compare displacement with x ≈ v T cos θ₀, y ≈ v T sin θ₀ for your chosen T.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Circular Trajectory</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Make the turtle follow a circular path using constant v, ω ≠ 0.
+
+<span class="comment">// Steps</span>
+1. Command:
+   rostopic pub -r 1 /turtle1/cmd_vel geometry_msgs/Twist \
+     "{linear: {x: 2.0}, angular: {z: 1.8}}"
+2. Let it run for 10–20 s.
+3. Record /turtle1/pose at a few time instants (rostopic echo or small node).
+
+<span class="comment">// Analysis</span>
+Compute R = v / |ω| and compare with the drawn circle radius. Discuss differences due to integration step and visualization.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – Square Path (Open Loop)</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Approximate a square by sequencing straight and rotate commands.
+
+<span class="comment">// Outline</span>
+Side length L, forward speed v:
+  T_side = L / v
+90° turn with ω:
+  T_turn ≈ (π/2) / ω
+
+<span class="comment">// Steps</span>
+1. Implement a Python node that:
+   - Moves straight for T_side,
+   - Rotates in place for T_turn,
+   - Repeats 4 times.
+2. Log final (x, y, θ) from /turtle1/pose.
+
+<span class="comment">// Discussion</span>
+Comment on endpoint error, drift, and relation to open-loop control.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>circle_controller.py – Constant v, ω</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic Python</span>
+            <span class="lang-badge lang-python">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">from</span> geometry_msgs.msg <span class="kw">import</span> Twist
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    rospy.init_node(<span class="str">'circle_controller'</span>)
+    pub = rospy.Publisher(<span class="str">'/turtle1/cmd_vel'</span>, Twist, queue_size=<span class="num">10</span>)
+
+    v = rospy.get_param(<span class="str">'~v'</span>, <span class="num">1.0</span>)    <span class="cmt"># m/s</span>
+    w = rospy.get_param(<span class="str">'~w'</span>, <span class="num">0.5</span>)  <span class="cmt"># rad/s</span>
+    T = rospy.get_param(<span class="str">'~T'</span>, <span class="num">10.0</span>) <span class="cmt"># seconds</span>
+
+    rate = rospy.Rate(<span class="num">20</span>)
+    t0 = rospy.Time.now().to_sec()
+
+    cmd = Twist()
+    cmd.linear.x = v
+    cmd.angular.z = w
+
+    <span class="kw">while</span> <span class="kw">not</span> rospy.is_shutdown():
+        t = rospy.Time.now().to_sec() - t0
+        <span class="kw">if</span> t &gt;= T:
+            <span class="cmt"># stop</span>
+            stop = Twist()
+            pub.publish(stop)
+            <span class="kw">break</span>
+        pub.publish(cmd)
+        rate.sleep()
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    <span class="kw">try</span>:
+        main()
+    <span class="kw">except</span> rospy.ROSInterruptException:
+        <span class="kw">pass</span>
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>square_controller.py – Square Path</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic Python</span>
+            <span class="lang-badge lang-python">Python</span>
+          </div>
+          <pre>
+<span class="cmt">#!/usr/bin/env python3</span>
+<span class="kw">import</span> rospy
+<span class="kw">from</span> geometry_msgs.msg <span class="kw">import</span> Twist
+
+<span class="kw">def</span> <span class="fn">move_straight</span>(pub, v, T):
+    cmd = Twist()
+    cmd.linear.x = v
+    rate = rospy.Rate(<span class="num">20</span>)
+    t0 = rospy.Time.now().to_sec()
+    <span class="kw">while</span> <span class="kw">not</span> rospy.is_shutdown():
+        t = rospy.Time.now().to_sec() - t0
+        <span class="kw">if</span> t &gt;= T:
+            <span class="kw">break</span>
+        pub.publish(cmd)
+        rate.sleep()
+
+<span class="kw">def</span> <span class="fn">turn</span>(pub, w, T):
+    cmd = Twist()
+    cmd.angular.z = w
+    rate = rospy.Rate(<span class="num">20</span>)
+    t0 = rospy.Time.now().to_sec()
+    <span class="kw">while</span> <span class="kw">not</span> rospy.is_shutdown():
+        t = rospy.Time.now().to_sec() - t0
+        <span class="kw">if</span> t &gt;= T:
+            <span class="kw">break</span>
+        pub.publish(cmd)
+        rate.sleep()
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    rospy.init_node(<span class="str">'square_controller'</span>)
+    pub = rospy.Publisher(<span class="str">'/turtle1/cmd_vel'</span>, Twist, queue_size=<span class="num">10</span>)
+
+    L = rospy.get_param(<span class="str">'~L'</span>, <span class="num">2.0</span>)      <span class="cmt"># side length (approx)</span>
+    v = rospy.get_param(<span class="str">'~v'</span>, <span class="num">1.0</span>)      <span class="cmt"># m/s</span>
+    w = rospy.get_param(<span class="str">'~w'</span>, <span class="num">1.0</span>)      <span class="cmt"># rad/s</span>
+
+    T_side = L / v
+    T_turn = (3.14159 / <span class="num">2.0</span>) / w
+
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">4</span>):
+        move_straight(pub, v, T_side)
+        turn(pub, w, T_turn)
+
+    pub.publish(Twist())  <span class="cmt"># stop</span>
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    <span class="kw">try</span>:
+        main()
+    <span class="kw">except</span> rospy.ROSInterruptException:
+        <span class="kw">pass</span>
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) What information is carried on /turtle1/cmd_vel and what is its message type?
+2) What state variables are available on /turtle1/pose?
+3) Explain qualitatively how v and ω change the turtle's path shape.
+4) How is the unicycle model related to a differential drive robot base?
+5) How would you obtain a more accurate square trajectory (feedback vs open-loop)?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Implement a feedback controller that reads /turtle1/pose and drives the turtle to a desired goal (x*, y*), similar to pose regulation examples.
+
+2) Use rqt_graph to capture the node graph with turtlesim_node, teleop, and your controller, and compare with the conceptual diagram on this page.
+
+3) Record /turtle1/pose with rosbag while running circle_controller.py and plot x(t), y(t) in Python.
+
+4) Spawn a second turtle using rosservice /spawn and explore controlling both with different topics and namespaces.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updatePath() {
+      const v = parseFloat(document.getElementById('v-slider').value);
+      const w = parseFloat(document.getElementById('w-slider').value);
+      const T = parseFloat(document.getElementById('T-slider').value);
+
+      document.getElementById('v-val').textContent = v.toFixed(1);
+      document.getElementById('w-val').textContent = w.toFixed(1);
+      document.getElementById('T-val').textContent = T.toFixed(0);
+
+      drawPath('pathCanvas', v, w, T);
+    }
+
+    function drawPath(canvasId, v, w, T) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const pad = { l: 40, r: 20, t: 20, b: 30 };
+      const pw = W - pad.l - pad.r;
+      const ph = H - pad.t - pad.b;
+
+      // simulate trajectory
+      const N = 300;
+      const dt = T / N;
+      let x = 0.0, y = 0.0, theta = 0.0;
+
+      const pts = [];
+      for (let i = 0; i <= N; i++) {
+        pts.push({ x, y });
+        x += v * Math.cos(theta) * dt;
+        y += v * Math.sin(theta) * dt;
+        theta += w * dt;
+      }
+
+      let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+      pts.forEach(p => {
+        xmin = Math.min(xmin, p.x);
+        xmax = Math.max(xmax, p.x);
+        ymin = Math.min(ymin, p.y);
+        ymax = Math.max(ymax, p.y);
+      });
+
+      if (xmin === xmax) { xmin -= 1; xmax += 1; }
+      if (ymin === ymax) { ymin -= 1; ymax += 1; }
+
+      const sx = pw / (xmax - xmin);
+      const sy = ph / (ymax - ymin);
+      const s = Math.min(sx, sy);
+
+      function toPix(p) {
+        const px = pad.l + (p.x - xmin) * s;
+        const py = pad.t + ph - (p.y - ymin) * s;
+        return { px, py };
+      }
+
+      ctx.strokeStyle = '#2a2d3e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad.l, pad.t, pw, ph);
+
+      ctx.strokeStyle = '#4f8ef7';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      pts.forEach((p, idx) => {
+        const { px, py } = toPix(p);
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+
+      ctx.fillStyle = '#4fcc7a';
+      ctx.beginPath();
+      const start = toPix(pts[0]);
+      ctx.arc(start.px, start.py, 4, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.fillStyle = '#f7914f';
+      ctx.beginPath();
+      const end = toPix(pts[pts.length - 1]);
+      ctx.arc(end.px, end.py, 4, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Idealized TurtleSim path (model)', pad.l, pad.t + ph + 18);
+
+      const infoDiv = document.getElementById('path-info');
+      let type = 'Straight line';
+      let Rtxt = 'R = ∞';
+      if (Math.abs(w) > 1e-3 && v > 1e-3) {
+        const R = v / Math.abs(w);
+        Rtxt = 'R ≈ ' + R.toFixed(2);
+        type = 'Circular arc';
+      } else if (Math.abs(w) > 1e-3 && v < 1e-3) {
+        type = 'Pure rotation';
+      }
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>Path:</span> ' + type + '</div>' +
+        '<div class="info-chip"><span>R:</span> ' + Rtxt + '</div>' +
+        '<div class="info-chip"><span>T:</span> ' + T.toFixed(1) + ' s</div>';
+    }
+
+    window.addEventListener('load', () => {
+      updatePath();
+    });
+  </script>
+</body>
+</html>

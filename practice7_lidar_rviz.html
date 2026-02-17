@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice 7 – LiDAR Integration & RViz Visualization</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #f7914f;
+      --green: #4fcc7a;
+      --text: #e8eaf0;
+      --muted: #8891a8;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header .badge {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      color: var(--muted);
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .content { padding: 28px 32px; display: none; }
+    .content.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h3 .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .eq-box {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: #c9d1d9;
+      line-height: 1.75;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .eq-box .comment { color: #6a737d; }
+    .eq-box .highlight { color: var(--accent); font-weight: bold; }
+    .eq-box .highlight2 { color: var(--accent2); font-weight: bold; }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1f2335;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .info-chip span { color: var(--text); font-weight: 600; }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .code-header {
+      padding: 10px 16px;
+      background: #161b22;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header span {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .lang-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .lang-xml {
+      background: #e44c1c22;
+      color: #e44c1c;
+      border: 1px solid #e44c1c44;
+    }
+    pre {
+      padding: 16px;
+      font-size: 12.5px;
+      line-height: 1.75;
+      overflow-x: auto;
+      color: #c9d1d9;
+      white-space: pre;
+    }
+
+    .kw { color: #ff7b72; }
+    .fn { color: #d2a8ff; }
+    .str { color: #a5d6ff; }
+    .num { color: #f0883e; }
+    .cmt { color: #6a737d; font-style: italic; }
+    .var { color: #ffa657; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .val-display {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      float: right;
+    }
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      header { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <span class="badge">CASE STUDY 7</span>
+        <h1>LiDAR Integration & Visualization in RViz</h1>
+      </div>
+      <p>ROS Noetic • LaserScan • PointCloud2 • RViz • Sensor Frames</p>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('theory')">LiDAR & RViz</div>
+    <div class="tab" onclick="switchTab('experiments')">Experiments</div>
+    <div class="tab" onclick="switchTab('code')">URDF & Launch</div>
+    <div class="tab" onclick="switchTab('viva')">Viva & Extensions</div>
+  </div>
+
+  <!-- THEORY TAB -->
+  <div id="tab-theory" class="content active">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>LiDAR Data in ROS</h3>
+        <div class="eq-box">
+<span class="comment">// Core message types</span>
+
+2D laser scanners:
+  <span class="highlight">sensor_msgs/LaserScan</span>
+    - angle_min, angle_max, angle_increment
+    - range_min, range_max
+    - ranges[] (distance per beam)
+
+3D or projected data:
+  <span class="highlight">sensor_msgs/PointCloud2</span>
+    - array of 3D points (x, y, z, intensity, ...).
+
+Typical topics:
+  /scan          : LaserScan
+  /points, /cloud: PointCloud2 (e.g., YRL LiDAR, depth camera)
+
+RViz can visualize both types as 2D scans or 3D point clouds using LaserScan
+and PointCloud2 displays.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>2D:</span> LaserScan</div>
+          <div class="info-chip"><span>3D:</span> PointCloud2</div>
+          <div class="info-chip"><span>Typical:</span> /scan topic</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Visualization in RViz</h3>
+        <div class="eq-box">
+<span class="comment">// Basic RViz workflow (ROS1)</span>
+
+1. Start driver (e.g., hokuyo_node) publishing /scan.
+2. Run RViz:
+   rosrun rviz rviz
+3. Set "Fixed Frame" = laser frame parent (e.g., base_link, map).
+4. Add display:
+   - LaserScan (topic: /scan)
+   - or PointCloud2 (topic: /points or /cloud)
+
+You should see radial beams or point cloud contours where obstacles intersect
+the LiDAR rays, matching physical obstacles or simulated ones in Gazebo.
+        </div>
+
+        <div class="info-row">
+          <div class="info-chip"><span>Tool:</span> RViz</div>
+          <div class="info-chip"><span>Displays:</span> LaserScan, PointCloud2</div>
+          <div class="info-chip"><span>Frame:</span> Fixed frame selection</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>Interactive LiDAR Coverage Sketch</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual 2D fan: FOV vs range</span>
+
+Adjust:
+ - Field of view (deg)
+ - Max range (m)
+to see a conceptual coverage fan, relating LiDAR specs to sensing footprint
+for navigation and obstacle detection.
+        </div>
+
+        <label>Field of view (deg)
+          <span class="val-display" id="fov-val">180</span>
+        </label>
+        <input type="range" id="fov-slider" min="60" max="360" step="10" value="180" oninput="updateLidarFan()" />
+
+        <label>Max range (m)
+          <span class="val-display" id="rng-val">10</span>
+        </label>
+        <input type="range" id="rng-slider" min="2" max="30" step="1" value="10" oninput="updateLidarFan()" />
+
+        <div style="margin-top:14px;">
+          <canvas id="lidarCanvas"></canvas>
+        </div>
+
+        <div class="info-row" id="lidar-info" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>LiDAR in URDF / Gazebo</h3>
+        <div class="eq-box">
+<span class="comment">// From "Simulation of URDF, Gazebo and RViz | ROS Noetic"</span>
+
+URDF/Gazebo LiDAR plugin (conceptual):
+  &lt;gazebo&gt;
+    &lt;sensor name="lidar" type="ray"&gt;
+      &lt;update_rate&gt;20&lt;/update_rate&gt;
+      &lt;ray&gt;
+        &lt;scan&gt;
+          &lt;horizontal&gt;
+            &lt;samples&gt;720&lt;/samples&gt;
+            &lt;resolution&gt;1&lt;/resolution&gt;
+            &lt;min_angle&gt;-3.14&lt;/min_angle&gt;
+            &lt;max_angle&gt;3.14&lt;/max_angle&gt;
+          &lt;/horizontal&gt;
+        &lt;/scan&gt;
+        &lt;range&gt;
+          &lt;min&gt;0.1&lt;/min&gt;
+          &lt;max&gt;30.0&lt;/max&gt;
+        &lt;/range&gt;
+      &lt;/ray&gt;
+      &lt;plugin name="gazebo_ros_laser" filename="libgazebo_ros_laser.so"&gt;
+        &lt;topicName&gt;/scan&lt;/topicName&gt;
+        &lt;frameName&gt;laser_frame&lt;/frameName&gt;
+      &lt;/plugin&gt;
+    &lt;/sensor&gt;
+  &lt;/gazebo&gt;
+
+This makes simulated beams in Gazebo appear as /scan in ROS, ready for RViz
+and for use in SLAM/navigation pipelines.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTS TAB -->
+  <div id="tab-experiments" class="content">
+    <div class="grid3">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>E1 – Hokuyo / Generic 2D LiDAR with RViz</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Connect a 2D LiDAR (e.g., Hokuyo) and visualize /scan in RViz.
+
+<span class="comment">// Steps (desktop + Hokuyo)</span>
+1. Start roscore.
+2. Run driver:
+   rosrun hokuyo_node hokuyo_node
+3. Check data:
+   rostopic list
+   rostopic echo /scan  (briefly)
+4. Launch RViz:
+   rosrun rviz rviz
+   - Set Fixed Frame: laser frame parent (e.g., base_link)
+   - Add "LaserScan" display, topic: /scan
+
+<span class="comment">// Observation</span>
+Obstacle edges should appear as arcs/points at their distance and angle
+relative to the sensor frame.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>E2 – Simulated LiDAR on Differential Drive Robot</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Attach a LiDAR to your Practice 4–5 robot and visualize it in Gazebo + RViz.
+
+<span class="comment">// Steps</span>
+1. Add a LiDAR sensor plugin to dd_robot URDF in Gazebo (ray + gazebo_ros_laser). 
+2. Launch Gazebo with robot (reuse Practice 5 world/launch).
+3. Place obstacles (boxes, walls) in front of robot.
+4. Start RViz, set Fixed Frame (e.g., base_link or map).
+5. Add LaserScan display on /scan; confirm beams match Gazebo obstacles.
+
+<span class="comment">// Discussion</span>
+Relate discrepancies (if any) to TF misconfigurations or frame mismatches.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>E3 – PointCloud vs LaserScan</h3>
+        <div class="eq-box">
+<span class="comment">// Objective</span>
+Compare PointCloud2 and LaserScan visualizations and conversions.
+
+<span class="comment">// Steps</span>
+1. Use a 3D sensor (e.g., depth camera or 3D LiDAR) publishing /points or /cloud.
+2. Visualize PointCloud2 in RViz (topic: /cloud).
+3. Use a conversion node (e.g., pointcloud_to_laserscan) to generate /scan.
+4. In RViz:
+   - Display both PointCloud2 (/cloud) and LaserScan (/scan).
+   - Observe how the 2D scan is a planar slice/approximation of the 3D data.
+
+<span class="comment">// Analysis</span>
+Discuss trade-offs: 3D richness vs bandwidth and processing, 2D simplicity
+for 2D navigation.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE TAB -->
+  <div id="tab-code" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>LiDAR Link & Joint in URDF</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>URDF</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- Add to dd_robot.urdf.xacro: LiDAR head --&gt;
+&lt;link name="lidar_link"&gt;
+  &lt;visual&gt;
+    &lt;origin xyz="0.15 0 0.20" rpy="0 0 0"/&gt;
+    &lt;geometry&gt;
+      &lt;cylinder radius="0.04" length="0.05"/&gt;
+    &lt;/geometry&gt;
+    &lt;material name="grey"&gt;
+      &lt;color rgba="0.5 0.5 0.5 1.0"/&gt;
+    &lt;/material&gt;
+  &lt;/visual&gt;
+  &lt;collision&gt;
+    &lt;origin xyz="0.15 0 0.20" rpy="0 0 0"/&gt;
+    &lt;geometry&gt;
+      &lt;cylinder radius="0.04" length="0.05"/&gt;
+    &lt;/geometry&gt;
+  &lt;/collision&gt;
+&lt;/link&gt;
+
+&lt;joint name="lidar_joint" type="fixed"&gt;
+  &lt;parent link="base_link"/&gt;
+  &lt;child  link="lidar_link"/&gt;
+  &lt;origin xyz="0.15 0 0.20" rpy="0 0 0"/&gt;
+&lt;/joint&gt;
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#4d9fdb;"></span>Gazebo LiDAR Plugin Snippet</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>Gazebo + ROS Laser</span>
+            <span class="lang-badge lang-xml">XML</span>
+          </div>
+          <pre>
+&lt;!-- Inside &lt;gazebo&gt; for lidar_link --&gt;
+&lt;gazebo reference="lidar_link"&gt;
+  &lt;sensor name="laser" type="ray"&gt;
+    &lt;update_rate&gt;20&lt;/update_rate&gt;
+    &lt;pose&gt;0 0 0 0 0 0&lt;/pose&gt;
+    &lt;ray&gt;
+      &lt;scan&gt;
+        &lt;horizontal&gt;
+          &lt;samples&gt;720&lt;/samples&gt;
+          &lt;resolution&gt;1&lt;/resolution&gt;
+          &lt;min_angle&gt;-3.14&lt;/min_angle&gt;
+          &lt;max_angle&gt;3.14&lt;/max_angle&gt;
+        &lt;/horizontal&gt;
+      &lt;/scan&gt;
+      &lt;range&gt;
+        &lt;min&gt;0.1&lt;/min&gt;
+        &lt;max&gt;30.0&lt;/max&gt;
+      &lt;/range&gt;
+    &lt;/ray&gt;
+
+    &lt;plugin name="gazebo_ros_laser" filename="libgazebo_ros_laser.so"&gt;
+      &lt;topicName&gt;/scan&lt;/topicName&gt;
+      &lt;frameName&gt;lidar_link&lt;/frameName&gt;
+    &lt;/plugin&gt;
+  &lt;/sensor&gt;
+&lt;/gazebo&gt;
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;" class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);"></span>RViz Config Hints (LaserScan & PointCloud)</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>RViz Settings</span>
+            <span class="lang-badge lang-xml">Text</span>
+          </div>
+          <pre>
+RViz recommended settings (conceptual):
+
+1) Global Options:
+   Fixed Frame: base_link (or map / odom depending on TF tree).
+
+2) Add "RobotModel":
+   - Visualizes URDF along with LiDAR mounting frame.
+
+3) Add "LaserScan":
+   - Topic: /scan
+   - Size (m): 0.05–0.1
+   - Color: flat color or intensity-based.
+
+4) For PointCloud2:
+   - Topic: /cloud or /points
+   - Style: Points
+   - Size (m): 0.02–0.05
+   - Color Transformer: Intensity / AxisColor.
+          </pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:#e44c1c;"></span>CLI Summary – LiDAR & RViz</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>ROS Noetic CLI</span>
+            <span class="lang-badge lang-xml">Shell</span>
+          </div>
+          <pre>
+<span class="cmt"># Real Hokuyo LiDAR</span>
+roscore
+rosrun hokuyo_node hokuyo_node
+rostopic list
+rostopic echo /scan   # quick check
+
+rosrun rviz rviz
+# Fixed Frame: base_link (or laser parent)
+# Add LaserScan display on /scan
+
+<span class="cmt"># Simulated LiDAR in Gazebo</span>
+roslaunch your_pkg launch_dd_robot_gazebo_with_lidar.launch
+rosrun rviz rviz
+# Add RobotModel + LaserScan /scan
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIVA TAB -->
+  <div id="tab-viva" class="content">
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent);"></span>Viva Questions</h3>
+        <div class="eq-box">
+<span class="comment">// Conceptual checks</span>
+
+1) Compare LaserScan and PointCloud2 in terms of information content and typical use-cases.
+2) Why is it important to set the correct Fixed Frame in RViz for LiDAR visualization?
+3) Explain how LiDAR data supports SLAM and navigation (e.g., in TurtleBot3 mapping experiments from earlier practices).
+4) What are FOV, angular resolution, and range, and how do they affect obstacle detection?
+5) How can TF errors lead to incorrect point cloud visualization in RViz?
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><span class="dot" style="background:var(--accent2);"></span>Extensions & Mini‑Projects</h3>
+        <div class="eq-box">
+<span class="comment">// Suggested extensions</span>
+
+1) Implement a simple obstacle detector that monitors /scan and publishes a boolean "obstacle_ahead" topic for a safety supervisor.
+
+2) Fuse LiDAR and depth-camera point clouds into a unified PointCloud2 and visualize in RViz, discussing redundancy and robustness.
+
+3) Use LiDAR with your differential-drive Gazebo robot to perform wall-following, treating wall distance as a controlled output.
+
+4) Explore a real (or simulated) corridor environment and record /scan in a rosbag, then replay it to test visualization and processing pipelines.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    function updateLidarFan() {
+      const fov = parseFloat(document.getElementById('fov-slider').value);
+      const rng = parseFloat(document.getElementById('rng-slider').value);
+      document.getElementById('fov-val').textContent = fov.toFixed(0);
+      document.getElementById('rng-val').textContent = rng.toFixed(0);
+      drawLidarFan('lidarCanvas', fov, rng);
+    }
+
+    function drawLidarFan(canvasId, fovDeg, rangeM) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width = W * window.devicePixelRatio;
+      canvas.height = H * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, W, H);
+
+      const cx = W * 0.15;
+      const cy = H * 0.5;
+
+      const maxRange = 30.0;
+      const scale = (W * 0.75) / maxRange;
+      const r = rangeM * scale;
+
+      const fovRad = fovDeg * Math.PI / 180.0;
+      const start = -fovRad / 2;
+      const end = fovRad / 2;
+
+      ctx.fillStyle = 'rgba(79, 142, 247, 0.18)';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, end);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#4f8ef7';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, start, end);
+      ctx.stroke();
+
+      ctx.fillStyle = '#4fcc7a';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.fillStyle = '#8891a8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('LiDAR coverage fan (not to scale)', cx, cy + r + 18);
+
+      const infoDiv = document.getElementById('lidar-info');
+      infoDiv.innerHTML =
+        '<div class="info-chip"><span>FOV:</span> ' + fovDeg.toFixed(0) + '°</div>' +
+        '<div class="info-chip"><span>Max range:</span> ' + rangeM.toFixed(0) + ' m</div>' +
+        '<div class="info-chip"><span>Angular res:</span> ~' + (fovDeg / 720).toFixed(2) + '°/beam (for 720 samples)</div>';
+    }
+
+    window.addEventListener('load', () => {
+      updateLidarFan();
+    });
+  </script>
+</body>
+</html>
