@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Define the Service: RunMotion.srv</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Roboto:wght@300;400;500;700&amp;family=Roboto+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 1280px;
+            height: 720px;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            background-color: #f8fafc;
+        }
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            display: flex;
+            flex-direction: column;
+        }
+        .font-heading {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .ros-blue {
+            color: #22559c;
+        }
+        .code-window {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        }
+        .line-number {
+            color: #4b5563;
+            text-align: right;
+            padding-right: 1rem;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+<div class="slide-container bg-white">
+<!-- Header -->
+<div class="bg-gray-900 text-white h-24 px-12 flex items-center justify-between shadow-md z-20 relative">
+<div class="flex items-center">
+<div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-6 shadow-lg">
+<i class="fa-solid fa-file-code text-2xl"></i>
+</div>
+<div>
+<h1 class="font-heading text-3xl font-bold tracking-wide">Define the Service</h1>
+<p class="text-gray-400 text-sm mt-1">Case Study-3: ROS Services &amp; Parameter Server</p>
+</div>
+</div>
+<div class="text-right">
+<span class="px-4 py-1 bg-gray-800 rounded-full text-xs text-blue-400 font-mono border border-gray-700">Step 2 of 8</span>
+</div>
+</div>
+<!-- Main Content -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Panel: Context & Instructions -->
+<div class="w-5/12 bg-gray-50 p-10 flex flex-col justify-between border-r border-gray-200 z-10">
+<div>
+<div class="mb-8">
+<h2 class="font-heading text-2xl font-bold text-gray-800 mb-4 flex items-center">
+<span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">1</span>
+                            Service Structure
+                        </h2>
+<p class="text-gray-600 mb-4 leading-relaxed">
+                            ROS services are defined in <code>.srv</code> files. They consist of a <strong>Request</strong> and a <strong>Response</strong>, separated by three dashes (<code>---</code>).
+                        </p>
+<div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+<ul class="space-y-3">
+<li class="flex items-start">
+<i class="fa-solid fa-arrow-right-to-bracket text-green-500 mt-1 mr-3"></i>
+<div>
+<span class="font-bold text-gray-800 text-sm">Request</span>
+<p class="text-xs text-gray-500">The client sends a "mode" string (e.g., "square").</p>
+</div>
+</li>
+<li class="flex items-center justify-center py-1">
+<div class="h-px w-full bg-gray-200"></div>
+<span class="px-2 text-gray-400 text-xs font-mono">---</span>
+<div class="h-px w-full bg-gray-200"></div>
+</li>
+<li class="flex items-start">
+<i class="fa-solid fa-arrow-right-from-bracket text-blue-500 mt-1 mr-3"></i>
+<div>
+<span class="font-bold text-gray-800 text-sm">Response</span>
+<p class="text-xs text-gray-500">Server returns success status and a message.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div>
+<h2 class="font-heading text-2xl font-bold text-gray-800 mb-4 flex items-center">
+<span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                            Setup Commands
+                        </h2>
+<div class="bg-gray-800 rounded-lg p-4 font-mono text-sm text-gray-300 shadow-inner">
+<div class="flex gap-2 mb-2">
+<span class="text-green-400">$</span>
+<p>cd ~/catkin_ws/src/case_study3_turtlesim_service</p>
+</div>
+<div class="flex gap-2 mb-2">
+<span class="text-green-400">$</span>
+<p>mkdir -p srv</p>
+</div>
+<div class="flex gap-2 mb-2">
+<span class="text-green-400">$</span>
+<p>gedit srv/RunMotion.srv &amp;</p>
+</div>
+<div class="flex gap-2 text-gray-500 mt-3 pt-3 border-t border-gray-700">
+<span class="text-blue-400"># Verify after build:</span>
+</div>
+<div class="flex gap-2">
+<span class="text-green-400">$</span>
+<p>rossrv show case_study3_turtlesim_service/RunMotion</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Code Focus -->
+<div class="w-7/12 bg-gray-100 p-10 flex flex-col justify-center items-center relative">
+<!-- Decorative background elements -->
+<div class="absolute top-10 right-10 text-9xl text-gray-200 opacity-50 rotate-12 pointer-events-none">
+<i class="fa-brands fa-python"></i>
+</div>
+<!-- Code Editor Window -->
+<div class="code-window w-full max-w-2xl bg-gray-900 rounded-lg overflow-hidden border border-gray-700 z-10">
+<!-- Editor Header -->
+<div class="bg-gray-800 px-4 py-2 flex items-center justify-between border-b border-gray-700">
+<div class="flex items-center space-x-2">
+<div class="w-3 h-3 rounded-full bg-red-500"></div>
+<div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+<div class="w-3 h-3 rounded-full bg-green-500"></div>
+</div>
+<div class="text-gray-400 text-xs font-mono flex items-center">
+<i class="fa-regular fa-file-code mr-2"></i>
+                            srv/RunMotion.srv
+                        </div>
+<div class="w-8"></div> <!-- Spacer for balance -->
+</div>
+<!-- Editor Content -->
+<div class="p-6 font-mono text-lg leading-relaxed">
+<div class="flex">
+<div class="line-number text-gray-600 select-none">1</div>
+<div class="text-gray-300">
+<span class="text-purple-400">string</span> mode      <span class="text-gray-500 italic"># "line", "circle", "square"</span>
+</div>
+</div>
+<div class="flex my-2">
+<div class="line-number text-gray-600 select-none">2</div>
+<div class="text-gray-500 font-bold">---</div>
+</div>
+<div class="flex">
+<div class="line-number text-gray-600 select-none">3</div>
+<div class="text-gray-300">
+<span class="text-purple-400">bool</span> success
+                            </div>
+</div>
+<div class="flex">
+<div class="line-number text-gray-600 select-none">4</div>
+<div class="text-gray-300">
+<span class="text-purple-400">string</span> message
+                            </div>
+</div>
+</div>
+<!-- Status Bar -->
+<div class="bg-blue-900 px-4 py-1 text-xs text-blue-200 font-mono flex justify-between">
+<span>UTF-8</span>
+<span>ROS Service Definition</span>
+</div>
+</div>
+<!-- Note Box -->
+<div class="mt-8 bg-white border-l-4 border-yellow-400 p-4 rounded shadow-sm max-w-2xl w-full">
+<div class="flex">
+<div class="flex-shrink-0">
+<i class="fa-solid fa-triangle-exclamation text-yellow-400"></i>
+</div>
+<div class="ml-3">
+<p class="text-sm text-gray-700">
+<span class="font-bold">Important:</span> The triple dash separator <code>---</code> is mandatory. It tells the build system where the Request ends and the Response begins.
+                            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Motion Server Implementation</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Roboto:wght@300;400;500;700&amp;family=Roboto+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 1280px;
+            height: 720px;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            background-color: #f8fafc;
+        }
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            display: flex;
+            flex-direction: column;
+        }
+        .font-heading {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .code-editor {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .syntax-kw { color: #c586c0; } /* Keyword */
+        .syntax-func { color: #dcdcaa; } /* Function */
+        .syntax-str { color: #ce9178; } /* String */
+        .syntax-comment { color: #6a9955; } /* Comment */
+        .syntax-num { color: #b5cea8; } /* Number */
+        .syntax-type { color: #4ec9b0; } /* Type */
+        .syntax-var { color: #9cdcfe; } /* Variable */
+        
+        .line-num {
+            color: #858585;
+            text-align: right;
+            padding-right: 1rem;
+            user-select: none;
+            border-right: 1px solid #333;
+            margin-right: 1rem;
+            min-width: 1.5rem;
+        }
+        
+        /* Custom scrollbar for code */
+        .code-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .code-scroll::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+        .code-scroll::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="slide-container bg-white">
+<!-- Header -->
+<div class="bg-gray-900 text-white h-24 px-12 flex items-center justify-between shadow-md z-20 relative">
+<div class="flex items-center">
+<div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-6 shadow-lg">
+<i class="fa-solid fa-server text-2xl"></i>
+</div>
+<div>
+<h1 class="font-heading text-3xl font-bold tracking-wide">Motion Server (Python)</h1>
+<p class="text-gray-400 text-sm mt-1">Case Study-3: Service + Motions</p>
+</div>
+</div>
+<div class="text-right">
+<span class="px-4 py-1 bg-gray-800 rounded-full text-xs text-blue-400 font-mono border border-gray-700">Step 4 of 8</span>
+</div>
+</div>
+<!-- Main Content -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Column: Code Implementation -->
+<div class="w-7/12 bg-gray-800 p-8 flex flex-col relative border-r border-gray-700">
+<!-- Code Editor Window -->
+<div class="code-editor rounded-lg shadow-2xl flex flex-col h-full overflow-hidden border border-gray-700">
+<!-- Editor Tab -->
+<div class="bg-gray-900 px-4 py-2 flex items-center space-x-2 border-b border-gray-800">
+<div class="flex space-x-1.5 mr-4">
+<div class="w-3 h-3 rounded-full bg-red-500"></div>
+<div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+<div class="w-3 h-3 rounded-full bg-green-500"></div>
+</div>
+<div class="bg-gray-800 text-gray-300 text-xs font-mono px-3 py-1 rounded-t flex items-center border-t border-l border-r border-gray-700 relative top-1">
+<i class="fa-brands fa-python mr-2 text-yellow-500"></i> motion_server.py
+                        </div>
+</div>
+<!-- Code Content -->
+<div class="p-4 font-mono text-sm leading-relaxed overflow-y-auto code-scroll flex-1">
+<!-- Block 1: Service Handler -->
+<div class="flex"><span class="line-num">1</span><span><span class="syntax-kw">def</span> <span class="syntax-func">handle_run_motion</span>(<span class="syntax-var">req</span>):</span></div>
+<div class="flex"><span class="line-num">2</span><span> <span class="syntax-var">mode</span> = <span class="syntax-var">req</span>.mode.lower()</span></div>
+<div class="flex"><span class="line-num">3</span><span> <span class="syntax-comment"># 1. Fetch params dynamically from Parameter Server</span></span></div>
+<div class="flex"><span class="line-num">4</span><span> <span class="syntax-var">v</span> = rospy.<span class="syntax-func">get_param</span>(<span class="syntax-str">"/motion/linear_speed"</span>, <span class="syntax-num">1.0</span>)</span></div>
+<div class="flex"><span class="line-num">5</span><span> <span class="syntax-var">w</span> = rospy.<span class="syntax-func">get_param</span>(<span class="syntax-str">"/motion/angular_speed"</span>, <span class="syntax-num">1.0</span>)</span></div>
+<div class="flex"><span class="line-num">6</span><span> <span class="syntax-var">reps</span> = <span class="syntax-func">int</span>(rospy.<span class="syntax-func">get_param</span>(<span class="syntax-str">"/motion/repetitions"</span>, <span class="syntax-num">1</span>))</span></div>
+<div class="flex"><span class="line-num">7</span><span></span></div>
+<div class="flex"><span class="line-num">8</span><span> <span class="syntax-kw">if</span> <span class="syntax-var">mode</span> == <span class="syntax-str">"square"</span>:</span></div>
+<div class="flex"><span class="line-num">9</span><span> <span class="syntax-var">side</span> = rospy.<span class="syntax-func">get_param</span>(<span class="syntax-str">"/motion/side_length"</span>, <span class="syntax-num">2.0</span>)</span></div>
+<div class="flex"><span class="line-num">10</span><span> <span class="syntax-kw">for</span> <span class="syntax-var">i</span> <span class="syntax-kw">in</span> <span class="syntax-func">range</span>(<span class="syntax-var">reps</span>):</span></div>
+<div class="flex"><span class="line-num">11</span><span> <span class="syntax-func">move_square</span>(pub, v, w, side)</span></div>
+<div class="flex"><span class="line-num">12</span><span></span></div>
+<div class="flex"><span class="line-num">13</span><span> <span class="syntax-kw">return</span> <span class="syntax-type">RunMotionResponse</span>(<span class="syntax-kw">True</span>, <span class="syntax-str">"Completed "</span> + <span class="syntax-var">mode</span>)</span></div>
+<div class="flex mt-4"><span class="line-num">14</span><span><span class="syntax-comment"># 2. Motion Logic (Square Example)</span></span></div>
+<div class="flex"><span class="line-num">15</span><span><span class="syntax-kw">def</span> <span class="syntax-func">move_square</span>(<span class="syntax-var">pub</span>, <span class="syntax-var">v</span>, <span class="syntax-var">w</span>, <span class="syntax-var">side_length</span>):</span></div>
+<div class="flex"><span class="line-num">16</span><span> <span class="syntax-var">T_side</span> = <span class="syntax-var">side_length</span> / <span class="syntax-var">v</span></span></div>
+<div class="flex"><span class="line-num">17</span><span> <span class="syntax-var">T_turn</span> = (<span class="syntax-num">3.14159</span> / <span class="syntax-num">2.0</span>) / <span class="syntax-var">w</span> <span class="syntax-comment"># 90 degrees</span></span></div>
+<div class="flex"><span class="line-num">18</span><span></span></div>
+<div class="flex"><span class="line-num">19</span><span> <span class="syntax-kw">for</span> <span class="syntax-var">_</span> <span class="syntax-kw">in</span> <span class="syntax-func">range</span>(<span class="syntax-num">4</span>):</span></div>
+<div class="flex"><span class="line-num">20</span><span> <span class="syntax-func">move_straight</span>(<span class="syntax-var">pub</span>, <span class="syntax-var">v</span>, <span class="syntax-var">T_side</span>)</span></div>
+<div class="flex"><span class="line-num">21</span><span> <span class="syntax-func">rotate</span>(<span class="syntax-var">pub</span>, <span class="syntax-var">w</span>, <span class="syntax-var">T_turn</span>)</span></div>
+<div class="flex"><span class="line-num">22</span><span> </span></div>
+<div class="flex"><span class="line-num">23</span><span> <span class="syntax-var">pub</span>.<span class="syntax-func">publish</span>(<span class="syntax-type">Twist</span>()) <span class="syntax-comment"># Stop robot</span></span></div>
+<div class="flex mt-4"><span class="line-num">24</span><span><span class="syntax-kw">if</span> <span class="syntax-var">__name__</span> == <span class="syntax-str">"__main__"</span>:</span></div>
+<div class="flex"><span class="line-num">25</span><span>    rospy.<span class="syntax-func">init_node</span>(<span class="syntax-str">"turtlesim_motion_server"</span>)</span></div>
+<div class="flex"><span class="line-num">26</span><span> <span class="syntax-var">pub</span> = rospy.<span class="syntax-type">Publisher</span>(<span class="syntax-str">"/turtle1/cmd_vel"</span>, <span class="syntax-type">Twist</span>, <span class="syntax-var">queue_size</span>=<span class="syntax-num">10</span>)</span></div>
+<div class="flex"><span class="line-num">27</span><span>    rospy.<span class="syntax-type">Service</span>(<span class="syntax-str">"/run_motion"</span>, <span class="syntax-type">RunMotion</span>, <span class="syntax-var">handle_run_motion</span>)</span></div>
+<div class="flex"><span class="line-num">28</span><span>    rospy.<span class="syntax-func">spin</span>()</span></div>
+</div>
+</div>
+</div>
+<!-- Right Column: Explanations -->
+<div class="w-5/12 bg-gray-50 p-8 flex flex-col overflow-y-auto">
+<!-- Node Setup Card -->
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 hover:shadow-md transition-shadow">
+<div class="flex items-center mb-3">
+<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
+<i class="fa-solid fa-network-wired text-sm"></i>
+</div>
+<h3 class="font-heading text-lg font-bold text-gray-800">Node &amp; Service Structure</h3>
+</div>
+<ul class="space-y-2 text-sm text-gray-600">
+<li class="flex items-start">
+<i class="fa-solid fa-circle-check text-green-500 mt-1 mr-2 text-xs"></i>
+<p><strong>Node:</strong> Initializes <code>turtlesim_motion_server</code>.</p>
+</li>
+<li class="flex items-start">
+<i class="fa-solid fa-circle-check text-green-500 mt-1 mr-2 text-xs"></i>
+<p><strong>Service:</strong> Advertises <code>/run_motion</code> using the <code>RunMotion</code> type.</p>
+</li>
+<li class="flex items-start">
+<i class="fa-solid fa-circle-check text-green-500 mt-1 mr-2 text-xs"></i>
+<p><strong>Publisher:</strong> Controls the robot via <code>/turtle1/cmd_vel</code>.</p>
+</li>
+</ul>
+</div>
+<!-- Parameter Server Card -->
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow flex-1">
+<div class="absolute right-0 top-0 w-24 h-24 bg-yellow-50 rounded-bl-full -mr-8 -mt-8 z-0"></div>
+<div class="relative z-10">
+<div class="flex items-center mb-3">
+<div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-3">
+<i class="fa-solid fa-sliders text-sm"></i>
+</div>
+<h3 class="font-heading text-lg font-bold text-gray-800">Dynamic Parameters</h3>
+</div>
+<p class="text-sm text-gray-600 leading-relaxed">
+                            The server fetches parameters <strong>inside the callback</strong>. This allows you to change speed or size without restarting the node.
+                        </p>
+<div class="bg-gray-100 p-2 rounded text-xs font-mono text-gray-700 border border-gray-300">
+                            rospy.get_param("/motion/linear_speed", 1.0)
+                        </div>
+<p class="text-xs text-gray-500 mt-1 italic">Format: (param_name, default_value)</p>
+</div>
+</div>
+<!-- Logic Card -->
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow flex-1">
+<div class="flex items-center mb-3">
+<div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-3">
+<i class="fa-solid fa-calculator text-sm"></i>
+</div>
+<h3 class="font-heading text-lg font-bold text-gray-800">Motion Logic</h3>
+</div>
+<p class="text-sm text-gray-600 mb-2">
+                        Movement is based on time-based kinematics:
+                    </p>
+<div class="flex items-center justify-center bg-purple-50 p-3 rounded-lg mb-3">
+<p class="font-mono text-sm font-bold text-purple-700">Duration = Distance / Speed</p>
+</div>
+<p class="text-sm text-gray-600 leading-relaxed">
+                        For a square, the robot repeats [Move Straight + Turn 90°] four times. Finally, it publishes a zero-velocity Twist to ensure the turtle stops completely.
+                    </p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ROS Services &amp; Parameter Server</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Roboto:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 1280px;
+            height: 720px;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            background-color: #f8fafc;
+        }
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            display: flex;
+        }
+        .font-heading {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .ros-blue {
+            color: #22559c;
+        }
+        .ros-bg-blue {
+            background-color: #22559c;
+        }
+    </style>
+</head>
+<body>
+<div class="slide-container shadow-2xl">
+<!-- Left Panel: Title & Branding -->
+<div class="w-5/12 bg-gray-900 text-white flex flex-col justify-center p-12 relative overflow-hidden">
+<!-- Abstract shapes for visual interest (no gradients) -->
+<div class="absolute top-0 left-0 w-64 h-64 bg-gray-800 rounded-br-full opacity-50 transform -translate-x-10 -translate-y-10"></div>
+<div class="absolute bottom-0 right-0 w-96 h-96 bg-gray-800 rounded-tl-full opacity-30 transform translate-x-20 translate-y-20"></div>
+<div class="relative z-10">
+<div class="mb-6 text-blue-400 text-5xl">
+<i class="fa-solid fa-robot"></i>
+</div>
+<h1 class="font-heading text-5xl font-extrabold leading-tight mb-6">
+                    ROS Services &amp; Parameter Server
+                </h1>
+<div class="w-20 h-2 bg-blue-500 mb-6"></div>
+<h2 class="font-heading text-2xl font-light text-gray-300 mb-8">
+                    Case Study-3: Turtlesim
+                </h2>
+<p class="text-gray-400 text-lg leading-relaxed">
+                    Build a custom service to control Turtlesim behavior dynamically using the ROS Parameter Server.
+                </p>
+</div>
+<!-- Footer info on left panel -->
+<div class="absolute bottom-12 left-12 text-gray-500 text-sm font-heading">
+<p>Robotics Operating System Tutorial</p>
+</div>
+</div>
+<!-- Right Panel: Content Overview -->
+<div class="w-7/12 bg-white p-12 flex flex-col justify-between">
+<!-- Objectives Section -->
+<div>
+<div class="flex items-center mb-6">
+<span class="bg-blue-100 text-blue-700 p-3 rounded-lg mr-4">
+<i class="fa-solid fa-bullseye text-xl"></i>
+</span>
+<h3 class="font-heading text-3xl font-bold text-gray-800">Objectives</h3>
+</div>
+<div class="space-y-4 pl-2">
+<div class="flex items-start">
+<i class="fa-solid fa-check text-green-500 mt-1 mr-4"></i>
+<p class="text-gray-700 text-lg">Create <strong>RunMotion.srv</strong> and generate custom messages.</p>
+</div>
+<div class="flex items-start">
+<i class="fa-solid fa-check text-green-500 mt-1 mr-4"></i>
+<p class="text-gray-700 text-lg">Implement robust <strong>Python server and client</strong> nodes.</p>
+</div>
+<div class="flex items-start">
+<i class="fa-solid fa-check text-green-500 mt-1 mr-4"></i>
+<p class="text-gray-700 text-lg">Utilize the <strong>Parameter Server</strong> to tune behavior at runtime.</p>
+</div>
+<div class="flex items-start">
+<i class="fa-solid fa-check text-green-500 mt-1 mr-4"></i>
+<p class="text-gray-700 text-lg">Execute end-to-end tests with verification.</p>
+</div>
+</div>
+</div>
+<!-- Prerequisites Section -->
+<div class="bg-gray-50 rounded-xl p-6 border border-gray-100">
+<h4 class="font-heading text-sm uppercase tracking-wider text-gray-500 mb-3 font-bold">Prerequisites</h4>
+<div class="flex flex-wrap gap-3">
+<span class="px-4 py-2 bg-white border border-gray-200 rounded-full text-gray-700 shadow-sm text-sm font-medium flex items-center">
+<i class="fa-brands fa-linux mr-2 text-gray-500"></i> ROS Noetic/Melodic
+                    </span>
+<span class="px-4 py-2 bg-white border border-gray-200 rounded-full text-gray-700 shadow-sm text-sm font-medium flex items-center">
+<i class="fa-solid fa-cube mr-2 text-blue-500"></i> Turtlesim
+                    </span>
+<span class="px-4 py-2 bg-white border border-gray-200 rounded-full text-gray-700 shadow-sm text-sm font-medium flex items-center">
+<i class="fa-brands fa-python mr-2 text-yellow-500"></i> Python 3
+                    </span>
+<span class="px-4 py-2 bg-white border border-gray-200 rounded-full text-gray-700 shadow-sm text-sm font-medium flex items-center">
+<i class="fa-solid fa-folder-tree mr-2 text-orange-500"></i> Catkin
+                    </span>
+</div>
+</div>
+<!-- Outcome Section -->
+<div class="border-l-4 border-blue-600 bg-blue-50 p-6 rounded-r-xl">
+<h4 class="font-heading text-lg font-bold text-blue-800 mb-2">Expected Outcome</h4>
+<p class="text-blue-900 leading-relaxed">
+                    A functional system where the <code>/run_motion</code> service controls the <code>/turtle1/cmd_vel</code> topic using three distinct motion modes: <strong>line</strong>, <strong>circle</strong>, and <strong>square</strong>.
+                </p>
+</div>
+</div>
+</div>
+</body>
+</html>
